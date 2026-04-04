@@ -33,6 +33,13 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
   - **LED feedback** — ReSpeaker HAT LEDs: pulsing blue = listening, pulsing green = thinking/processing, red flash = error.
   - **Logging** — Local error log with rotation for debugging.
 
+## Testing Strategy
+
+- Behavior-Driven Development — tests describe expected behaviors, not implementation.
+- Plain pytest — no BDD framework. Well-named tests and domain-specific helper functions serve as the DSL.
+- Acceptance tests organized by feature (conversation flow, wake word, STT, TTS, AI agent, error handling, configuration).
+- Hardware dependencies (mic, speaker, LEDs, API) are faked via pytest fixtures.
+
 ## User-Facing Setup
 
 - **Configuration** — Convention over Configuration. Single `config.yaml` with sensible defaults baked into code; file only needs overrides. Precedence: CLI args > config file > defaults.
