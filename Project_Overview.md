@@ -39,5 +39,5 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
   - **Defaults** — language: `en`, silence timeout: 8s, max STT retries: 2.
   - **Required (no default)** — API provider, API key. Fail fast with clear message if unset.
   - **CLI overrides** — `--language`, `--log-level`, `--config` (alternate config path). Only flags useful for dev/debugging.
-- **Installation & deployment** — _TBD: How does this get onto the Pi? pip install, Docker, setup script?_
+- **Installation & deployment** — Makefile. Targets: `install` (venv + deps + default config), `run`, `service` (systemd auto-start), `uninstall`, `clean`. Assumes ReSpeaker HAT is already configured.
 
