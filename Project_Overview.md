@@ -17,7 +17,8 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
 
 ## Hardware & Audio
 
-- **Audio I/O** — _TBD: USB mic, I2S HAT, 3.5mm? Driver/latency implications._
+- **Audio input** — ReSpeaker 4-Mic HAT (I2S)
+- **Audio output** — USB speakers
 - **Privacy** — _TBD: Everything offline except the AI agent call. Worth stating explicitly as a design constraint._
 
 ## Runtime Behavior
