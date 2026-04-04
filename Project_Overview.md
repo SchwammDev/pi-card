@@ -25,7 +25,13 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
 
 - **Conversation mode** — Multi-turn. After each response, the mic stays open for follow-ups. Conversation ends on silence timeout (default: 8s, configurable) or explicit exit ("goodbye", "that's all"), returning to wake-word mode.
 - **Concurrency model** — Sequential pipeline (listen → transcribe → query → speak) to start. Later, stream AI response into TTS in sentence-sized chunks for lower perceived latency.
-- **Error handling & feedback** — _TBD: Behavior when network is down, API times out, or STT returns garbage. Audio cue, LED, silent retry?_
+- **Error handling & feedback:**
+  - **Network / API failure** — Play spoken error cue ("I can't reach my brain right now"), flash LED red, return to wake-word mode. No silent retries.
+  - **Low-confidence STT** — Ask "Sorry, could you repeat that?" and re-listen. Max retries configurable (default: 2), then audio error cue + red LED, return to wake-word mode.
+  - **TTS failure** — Play generic error tone, log error, return to wake-word mode.
+  - **Audio hardware issues** — Detect on startup, fail fast with clear log message. LED solid red if available.
+  - **LED feedback** — ReSpeaker HAT LEDs: pulsing blue = listening, pulsing green = thinking/processing, red flash = error.
+  - **Logging** — Local error log with rotation for debugging.
 
 ## User-Facing Setup
 
