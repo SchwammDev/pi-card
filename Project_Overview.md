@@ -24,7 +24,7 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
 ## Runtime Behavior
 
 - **Conversation mode** — Multi-turn. After each response, the mic stays open for follow-ups. Conversation ends on silence timeout (default: 8s, configurable) or explicit exit ("goodbye", "that's all"), returning to wake-word mode.
-- **Concurrency model** — _TBD: Sequential pipeline (listen → transcribe → query → speak) or streamed/pipelined for lower latency?_
+- **Concurrency model** — Sequential pipeline (listen → transcribe → query → speak) to start. Later, stream AI response into TTS in sentence-sized chunks for lower perceived latency.
 - **Error handling & feedback** — _TBD: Behavior when network is down, API times out, or STT returns garbage. Audio cue, LED, silent retry?_
 
 ## User-Facing Setup
