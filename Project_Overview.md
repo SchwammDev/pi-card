@@ -35,6 +35,9 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
 
 ## User-Facing Setup
 
-- **Configuration** — _TBD: How does the user set language, API provider, API keys, wake word? Config file, CLI flags, web UI?_
+- **Configuration** — Convention over Configuration. Single `config.yaml` with sensible defaults baked into code; file only needs overrides. Precedence: CLI args > config file > defaults.
+  - **Defaults** — language: `en`, silence timeout: 8s, max STT retries: 2.
+  - **Required (no default)** — API provider, API key. Fail fast with clear message if unset.
+  - **CLI overrides** — `--language`, `--log-level`, `--config` (alternate config path). Only flags useful for dev/debugging.
 - **Installation & deployment** — _TBD: How does this get onto the Pi? pip install, Docker, setup script?_
 
