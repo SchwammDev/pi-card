@@ -1,9 +1,17 @@
-# Raspberry Pi AI Voice Assistent
+# Raspberry Pi AI Voice Assistant
 
-Lightweight voice assistent that listens to the user and has access to an AI agent to solve problems.
+Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake word, transcribes user speech, dispatches to an AI agent, and speaks the response.
 
-This is an AI voice assistent that runs on a Raspberry Pi 4 or higher.
-It recognises a specific wake word after which it starts listening to the users and starts dispatching to the AI agent.
-The AI agent can then answer and also has access to common tools to react to the users request.
+## Supported Languages
 
-The user can configure custom OpenAI-compatible model providers.
+- English
+- French
+
+## Tech Stack
+
+- **Language:** Python
+- **Wake word detection:** openWakeWord (offline, swappable to Porcupine if accuracy needs arise)
+- **Speech-to-text:** Faster-Whisper (offline, multilingual — user specifies language)
+- **Text-to-speech:** Piper (offline, fast on Pi 4; swappable to cloud TTS later)
+- **AI agent:** OpenAI-compatible API (user-configurable provider)
+
