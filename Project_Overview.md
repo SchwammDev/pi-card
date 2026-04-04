@@ -15,3 +15,19 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
 - **Text-to-speech:** Piper (offline, fast on Pi 4; swappable to cloud TTS later)
 - **AI agent:** OpenAI-compatible API (user-configurable provider)
 
+## Hardware & Audio
+
+- **Audio I/O** — _TBD: USB mic, I2S HAT, 3.5mm? Driver/latency implications._
+- **Privacy** — _TBD: Everything offline except the AI agent call. Worth stating explicitly as a design constraint._
+
+## Runtime Behavior
+
+- **Conversation mode** — _TBD: Single turn (wake word every time) or multi-turn (stays listening for follow-ups)?_
+- **Concurrency model** — _TBD: Sequential pipeline (listen → transcribe → query → speak) or streamed/pipelined for lower latency?_
+- **Error handling & feedback** — _TBD: Behavior when network is down, API times out, or STT returns garbage. Audio cue, LED, silent retry?_
+
+## User-Facing Setup
+
+- **Configuration** — _TBD: How does the user set language, API provider, API keys, wake word? Config file, CLI flags, web UI?_
+- **Installation & deployment** — _TBD: How does this get onto the Pi? pip install, Docker, setup script?_
+
