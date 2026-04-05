@@ -19,7 +19,6 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
 
 - **Audio input** — ReSpeaker 4-Mic HAT (I2S)
 - **Audio output** — USB speakers
-- **Privacy** — _TBD: Everything offline except the AI agent call. Worth stating explicitly as a design constraint._
 
 ## Runtime Behavior
 
@@ -33,12 +32,23 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
   - **LED feedback** — ReSpeaker HAT LEDs: pulsing blue = listening, pulsing green = thinking/processing, red flash = error.
   - **Logging** — Local error log with rotation for debugging.
 
+## Hardware Abstraction
+
+Production code depends on abstract interfaces (Python ABCs), never on concrete hardware. Each hardware boundary has a corresponding ABC:
+
+- `AudioInput` — mic capture (ReSpeaker HAT in production, fake in tests)
+- `AudioOutput` — speaker playback (USB speakers in production, fake in tests)
+- `LEDController` — LED feedback (ReSpeaker HAT LEDs in production, fake in tests)
+- `AIAgent` — AI provider communication (API client in production, fake in tests)
+
+Dependencies are passed via constructor injection — no service locators, no frameworks.
+
 ## Testing Strategy
 
 - Behavior-Driven Development — tests describe expected behaviors, not implementation.
 - Plain pytest — no BDD framework. Well-named tests and domain-specific helper functions serve as the DSL.
 - Acceptance tests organized by feature (conversation flow, wake word, STT, TTS, AI agent, error handling, configuration).
-- Hardware dependencies (mic, speaker, LEDs, API) are faked via pytest fixtures.
+- Hardware dependencies (mic, speaker, LEDs, API) are faked via pytest fixtures using the ABCs from Hardware Abstraction. Fakes are injected through constructor injection.
 
 ## User-Facing Setup
 
