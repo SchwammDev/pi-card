@@ -40,6 +40,12 @@ Lightweight voice assistant that runs on a Raspberry Pi 4+. Listens for a wake w
 - Acceptance tests organized by feature (conversation flow, wake word, STT, TTS, AI agent, error handling, configuration).
 - Hardware dependencies (mic, speaker, LEDs, API) are faked via pytest fixtures. Fakes implement the hardware ABCs and are injected through constructors.
 
+## Development Setup
+
+- **Package manager:** uv (`pyproject.toml` + `uv.lock` committed)
+- **Python:** 3.11+
+- **Run tests:** `uv run pytest`
+
 ## User-Facing Setup
 
 - **Configuration** — Convention over Configuration. Single `config.yaml` with sensible defaults baked into code; file only needs overrides. Precedence: CLI args > config file > defaults.
