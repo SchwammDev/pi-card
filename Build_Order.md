@@ -2,7 +2,7 @@
 
 Sequential phases for building v1. Each phase produces something runnable or testable; later phases depend on earlier ones. Delete this file once v1 ships.
 
-## Phase 1 — Skeleton and contracts
+## Phase 1 — Skeleton and contracts ✅ complete
 
 - `pyproject.toml`, package layout under `src/pi_card/`
 - The four hardware ABCs in `src/pi_card/hardware/` (`AudioInput`, `AudioOutput`, `LEDController`, `AIAgent`)
@@ -11,7 +11,7 @@ Sequential phases for building v1. Each phase produces something runnable or tes
 
 **Done when:** `uv run pytest` runs green on a trivial smoke test that wires fakes through an empty orchestrator.
 
-## Phase 2 — Pipeline wrappers (against fakes)
+## Phase 2 — Pipeline wrappers (against fakes) ✅ complete
 
 - `pipeline/wake_word.py` — openWakeWord wrapper consuming `AudioInput`
 - `pipeline/stt.py` — Faster-Whisper wrapper (base, int8) consuming `AudioInput`
