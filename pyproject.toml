@@ -9,6 +9,9 @@ dependencies = [
     "openwakeword>=0.6",
     "faster-whisper>=1.0",
     "piper-tts>=1.2",
+    "openai>=1.0",
+    "sounddevice>=0.4",
+    "apa102-pi>=2.4",
 ]
 
 [project.optional-dependencies]
