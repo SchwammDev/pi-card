@@ -27,11 +27,11 @@ class WakeWordDetector:
         self._threshold = threshold
 
     def wait_for_wake_word(self, audio_in: AudioInput) -> None:
-        for frame in audio_in.frames():
+        while True:
+            frame = audio_in.read_frame()
             scores = self._engine.predict(frame)
             if scores.get(self._model_name, 0.0) >= self._threshold:
                 return
-        raise RuntimeError("wake word stream ended without detection")
 
 
 def load_openwakeword_engine(model_name: str = DEFAULT_WAKE_WORD) -> WakeWordEngine:

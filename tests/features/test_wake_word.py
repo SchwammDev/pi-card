@@ -1,6 +1,6 @@
 import pytest
 
-from pi_card.hardware.audio_input import FRAME_BYTES
+from pi_card.hardware.audio_input import AudioInputExhausted, FRAME_BYTES
 from pi_card.pipeline.wake_word import WakeWordDetector
 from tests.fakes.audio_input import FakeAudioInput
 from tests.fakes.wake_word_engine import FakeWakeWordEngine
@@ -54,7 +54,7 @@ def test_raises_when_audio_stream_ends_without_detection():
     audio = FakeAudioInput(frames=[SILENCE_FRAME, SILENCE_FRAME])
     detector = WakeWordDetector(engine=engine, threshold=0.5)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(AudioInputExhausted):
         detector.wait_for_wake_word(audio)
 
 
