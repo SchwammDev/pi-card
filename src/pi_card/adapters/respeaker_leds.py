@@ -71,12 +71,14 @@ class _APA102SpiDriver:
     4 bytes per LED [0xE0|brightness, B, G, R], then enough 1-bits to
     clock the last LED's data through the daisy chain."""
 
-    def __init__(self, num_leds: int, *, bus: int = 0, device: int = 0, max_speed_hz: int = 8_000_000):
+    def __init__(self, num_leds: int, *, bus: int = 0, device: int = 0, max_speed_hz: int = 4_000_000):
         import spidev  # type: ignore[import-not-found]
 
         self._spi = spidev.SpiDev()
         self._spi.open(bus, device)
         self._spi.max_speed_hz = max_speed_hz
+        self._spi.mode = 0b00
+        self._spi.bits_per_word = 8
         self._num_leds = num_leds
         self._pixels = [(0, 0, 0, 0)] * num_leds
 
