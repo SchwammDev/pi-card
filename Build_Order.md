@@ -38,7 +38,7 @@ Piper voice quality is subjective. Confirm now while voices are still cheap to s
 
 **Done when:** all acceptance tests in `tests/features/` pass against fakes.
 
-## Phase 4 — Production hardware adapters (parallel-friendly)
+## Phase 4 — Production hardware adapters (parallel-friendly) ✅ complete
 
 These four are independent and tested against the same fakes/contracts from Phase 1. Build in parallel if convenient:
 
@@ -47,7 +47,7 @@ These four are independent and tested against the same fakes/contracts from Phas
 - `adapters/usb_speaker.py`
 - `adapters/openai_agent.py`
 
-### Manual gate — per-adapter hardware bring-up
+### Manual gate — per-adapter hardware bring-up ✅ passed
 
 Each adapter needs a human in front of the Pi the first time. Where a Phase 2 wrapper already consumes the adapter, route through it — that exercises the seam between the adapter and the rest of the package, not just the hardware.
 
@@ -57,10 +57,23 @@ Pass criteria:
 - **USB speaker** (via `pipeline/tts.py`): audible at usable volume, no crackle, no buffer-underrun warnings in the log.
 - **ReSpeaker LEDs**: pulsing blue → pulsing green → red flash, each visually distinct and matching the spec.
 - **OpenAI agent**: sensible reply in under ~2 s. **Design budget:** 5+ s here means the full pipeline will feel sluggish — investigate before moving on.
+  - Reasoning/thinking-mode models add per-call latency unsuited to voice. Prefer non-reasoning models (e.g. `gpt-4o-mini`-class), or set a `reasoning_effort=minimal`-equivalent if the provider exposes one. See `Project_Overview.md` → AI Agent.
+
+**Done when:** the four adapters exist and the per-adapter bring-up gate above passes. End-to-end behavior moves to the ears-only gate in Phase 5, which needs the CLI wiring.
+
+## Phase 5 — Packaging and end-to-end
+
+- `cli.py` and `__main__.py` with the documented flags
+- Top-level wiring that constructs adapters from `Config` and hands them to `VoiceAssistant`
+- `Makefile` targets: `install`, `run`, `service`, `uninstall`, `clean`
+- systemd unit for auto-start
+- `config.yaml.example` with all defaults documented
+
+**Done when:** `make install && make service` brings the assistant up on a fresh Pi *and* the ears-only gate below passes.
 
 ### Manual gate — full conversation, ears only
 
-With all four adapters wired in, run the assistant and have a real conversation. You're judging *felt* quality, which acceptance tests cannot.
+With all four adapters wired in through the CLI, run the assistant and have a real conversation. You're judging *felt* quality, which acceptance tests cannot.
 
 Exercises to cover:
 
@@ -72,17 +85,6 @@ Exercises to cover:
 - Network unplugged: spoken error cue plays and LED flashes red.
 
 Judge: does the multi-turn rhythm feel natural? Is end-to-end latency tolerable (wake → reply start)? Does the 8 s silence timeout feel right, or should the default change?
-
-**Done when:** the assistant runs end-to-end on a Pi with real hardware and the manual conversation gate above passes.
-
-## Phase 5 — Packaging
-
-- `cli.py` and `__main__.py` with the documented flags
-- `Makefile` targets: `install`, `run`, `service`, `uninstall`, `clean`
-- systemd unit for auto-start
-- `config.yaml.example` with all defaults documented
-
-**Done when:** `make install && make service` brings the assistant up on a fresh Pi.
 
 ### Manual gate — fresh-Pi install
 

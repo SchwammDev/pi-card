@@ -27,6 +27,7 @@ The active language can be switched mid-session via voice command. See `Language
 
 - **Interface** — accepts a list of messages (OpenAI chat-completions shape: `[{"role": ..., "content": ...}, ...]`) and returns a single assistant message.
 - **System prompt** — "You are a concise voice assistant. Reply in 1–3 sentences unless asked for detail. Avoid markdown, lists, or code — your output is spoken aloud."
+- **Model choice** — prefer non-reasoning models (e.g. `gpt-4o-mini`-class). Reasoning/thinking-mode models add hundreds of milliseconds to seconds of hidden chain-of-thought per reply — acceptable for chat, prohibitive for conversation. If using a reasoning-capable model, set the provider's `reasoning_effort`/`thinking`-equivalent to its minimum. v1 does not plumb this through — if a future deployment needs a reasoning-capable model, add a `reasoning_effort` field to `Config` and pass it through `OpenAIAgent.chat`.
 - **History within a conversation** — full message history retained until silence timeout or explicit exit, then cleared.
 - **History across conversations** — none in v1. The interface is shaped to allow a `MemoryStore` to be added later without changing call sites.
 
