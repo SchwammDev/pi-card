@@ -1,0 +1,14 @@
+[Unit]
+Description=pi-card voice assistant
+After=sound.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@WORKDIR@
+ExecStart=@UV@ run python -m pi_card --config @CONFIG@ --log-level INFO
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

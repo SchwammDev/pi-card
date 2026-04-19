@@ -1,0 +1,15 @@
+# pi-card configuration.
+# Copy this file to ~/.config/pi-card/config.yaml (or pass --config), then fill in
+# the three required agent fields. All other values have sensible defaults.
+
+agent:
+  # OpenAI-compatible chat-completions endpoint.
+  base_url: https://api.openai.com/v1
+  api_key: REPLACE_WITH_YOUR_API_KEY
+  # Prefer a non-reasoning model for low voice-latency (see Project_Overview.md).
+  model: gpt-4o-mini
+
+# Optional overrides (defaults shown):
+# language: en            # starting language; "en" or "fr". Switchable mid-session.
+# silence_timeout: 8.0    # seconds of silence before returning to wake-word mode.
+# max_stt_retries: 2      # low-confidence STT retries before giving up.

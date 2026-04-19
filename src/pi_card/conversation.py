@@ -1,3 +1,5 @@
+import logging
+
 from pi_card.audio_tones import error_tone
 from pi_card.hardware.ai_agent import AIAgent, Message
 from pi_card.hardware.audio_input import AudioInput
@@ -18,6 +20,9 @@ SYSTEM_PROMPT = (
     "You are a concise voice assistant. Reply in 1\u20133 sentences unless asked for detail. "
     "Avoid markdown, lists, or code \u2014 your output is spoken aloud."
 )
+
+_logger = logging.getLogger(__name__)
+_transcripts = logging.getLogger("pi_card.transcripts")
 
 
 class Conversation:
@@ -60,6 +65,8 @@ class Conversation:
         if text is None:
             return False
 
+        _transcripts.info("user (%s): %s", self._language, text)
+
         if is_exit_phrase(text, language=self._language):
             return False
 
@@ -72,10 +79,12 @@ class Conversation:
         try:
             reply = self._agent.chat(self._history)
         except Exception:
+            _logger.exception("agent call failed")
             self._announce_network_failure()
             return False
         self._history.append(reply)
 
+        _transcripts.info("assistant (%s): %s", self._language, reply.content or "")
         return self._speak(reply.content or "", language=self._language)
 
     def _listen_and_transcribe(self) -> str | None:
@@ -115,6 +124,7 @@ class Conversation:
             self._tts_by_language[language].speak(text, self._audio_out)
             return True
         except Exception:
+            _logger.exception("TTS speak failed (language=%s)", language)
             self._play_error_tone()
             return False
 
@@ -125,6 +135,7 @@ class Conversation:
                 network_error_cue(language=self._language), self._audio_out
             )
         except Exception:
+            _logger.exception("network-error cue TTS failed")
             self._audio_out.play(error_tone())
 
     def _play_error_tone(self) -> None:
