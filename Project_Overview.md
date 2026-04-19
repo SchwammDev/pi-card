@@ -61,7 +61,7 @@ The active language can be switched mid-session via voice command. See `Language
 
 - **Package manager:** uv (`pyproject.toml` + `uv.lock` committed)
 - **Python:** 3.11+
-- **Run tests:** `uv run pytest`
+- **Run tests:** `./run-tests.sh` (accepts usual `pytest` args, e.g. `./run-tests.sh -k "smoke"`)
 
 ### Repository Layout
 
