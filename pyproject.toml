@@ -12,6 +12,7 @@ dependencies = [
     "openai>=1.0",
     "sounddevice>=0.4",
     "spidev>=3.6",
+    "gpiozero>=2.0",
 ]
 
 [project.optional-dependencies]

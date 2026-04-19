@@ -5,6 +5,7 @@ import time
 from pi_card.hardware.leds import LEDController, LEDState
 
 NUM_LEDS = 12
+LED_POWER_GPIO = 5  # ReSpeaker 4-Mic Array: LED rail power-enable
 PULSE_PERIOD_S = 2.0
 PULSE_STEP_S = 0.05
 BRIGHTNESS_MAX = 20  # APA102 global brightness is 5-bit (0-31)
@@ -25,7 +26,13 @@ class ReSpeakerLEDs(LEDController):
     if a new state follows almost immediately."""
 
     def __init__(self, *, driver=None):
-        self._driver = driver if driver is not None else _APA102SpiDriver(NUM_LEDS)
+        self._power = _enable_led_power()
+        try:
+            self._driver = driver if driver is not None else _APA102SpiDriver(NUM_LEDS)
+        except Exception:
+            if self._power is not None:
+                self._power.off()
+            raise
         self._lock = threading.Lock()
         self._state = LEDState.OFF
         self._stop = threading.Event()
@@ -41,6 +48,14 @@ class ReSpeakerLEDs(LEDController):
         self._thread.join(timeout=1.0)
         self._paint((0, 0, 0), brightness=0)
         self._driver.close()
+        if self._power is not None:
+            self._power.off()
+
+    def __enter__(self) -> "ReSpeakerLEDs":
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        self.close()
 
     def _run(self) -> None:
         t = 0.0
@@ -63,6 +78,16 @@ class ReSpeakerLEDs(LEDController):
         for i in range(NUM_LEDS):
             self._driver.set_pixel(i, r, g, b, brightness)
         self._driver.show()
+
+
+def _enable_led_power():
+    """Pull GPIO 5 high to power the APA102 rail on the 4-Mic Array HAT.
+    Without this the LEDs receive SPI data but never light up."""
+    from gpiozero import LED  # type: ignore[import-not-found]
+
+    power = LED(LED_POWER_GPIO)
+    power.on()
+    return power
 
 
 class _APA102SpiDriver:

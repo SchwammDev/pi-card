@@ -35,7 +35,11 @@ class ReSpeakerInput(AudioInput):
             dtype="int32",
             device=device,
         )
-        self._stream.start()
+        try:
+            self._stream.start()
+        except Exception:
+            self._stream.close()
+            raise
 
     def read_frame(self) -> bytes:
         import numpy as np
@@ -50,3 +54,9 @@ class ReSpeakerInput(AudioInput):
     def close(self) -> None:
         self._stream.stop()
         self._stream.close()
+
+    def __enter__(self) -> "ReSpeakerInput":
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        self.close()
