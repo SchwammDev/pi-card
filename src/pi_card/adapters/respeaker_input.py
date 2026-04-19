@@ -1,6 +1,7 @@
+import sys
+
 from pi_card.hardware.audio_input import (
     AudioInput,
-    AudioInputExhausted,
     CHANNELS,
     FRAME_SAMPLES,
     SAMPLE_RATE_HZ,
@@ -28,9 +29,9 @@ class ReSpeakerInput(AudioInput):
     def read_frame(self) -> bytes:
         data, overflowed = self._stream.read(FRAME_SAMPLES)
         if overflowed:
-            # Overflow means the kernel buffer filled before we read it.
-            # Surface it rather than silently corrupting the audio timeline.
-            raise AudioInputExhausted("audio input overflowed")
+            # Buffer overran because a reader was slow. The timeline has a
+            # gap, but the stream is still live — warn and keep going.
+            print("audio input overflowed", file=sys.stderr)
         return bytes(data)
 
     def close(self) -> None:
