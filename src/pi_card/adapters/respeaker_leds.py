@@ -7,7 +7,7 @@ from pi_card.hardware.leds import LEDController, LEDState
 NUM_LEDS = 12
 PULSE_PERIOD_S = 2.0
 PULSE_STEP_S = 0.05
-BRIGHTNESS_MAX = 20
+BRIGHTNESS_MAX = 20  # APA102 global brightness is 5-bit (0-31)
 
 _COLOURS: dict[LEDState, tuple[int, int, int] | None] = {
     LEDState.OFF: None,
@@ -25,7 +25,7 @@ class ReSpeakerLEDs(LEDController):
     if a new state follows almost immediately."""
 
     def __init__(self, *, driver=None):
-        self._driver = driver if driver is not None else _build_apa102_driver()
+        self._driver = driver if driver is not None else _APA102SpiDriver(NUM_LEDS)
         self._lock = threading.Lock()
         self._state = LEDState.OFF
         self._stop = threading.Event()
@@ -40,6 +40,7 @@ class ReSpeakerLEDs(LEDController):
         self._stop.set()
         self._thread.join(timeout=1.0)
         self._paint((0, 0, 0), brightness=0)
+        self._driver.close()
 
     def _run(self) -> None:
         t = 0.0
@@ -64,7 +65,31 @@ class ReSpeakerLEDs(LEDController):
         self._driver.show()
 
 
-def _build_apa102_driver():
-    from apa102_pi.driver.apa102 import APA102  # type: ignore[import-not-found]
+class _APA102SpiDriver:
+    """Minimal APA102 driver over Linux SPI. Enough to drive a small ring
+    and nothing more. Wire protocol: 4 bytes of zeros (start frame), then
+    4 bytes per LED [0xE0|brightness, B, G, R], then enough 1-bits to
+    clock the last LED's data through the daisy chain."""
 
-    return APA102(num_led=NUM_LEDS, global_brightness=BRIGHTNESS_MAX)
+    def __init__(self, num_leds: int, *, bus: int = 0, device: int = 0, max_speed_hz: int = 8_000_000):
+        import spidev  # type: ignore[import-not-found]
+
+        self._spi = spidev.SpiDev()
+        self._spi.open(bus, device)
+        self._spi.max_speed_hz = max_speed_hz
+        self._num_leds = num_leds
+        self._pixels = [(0, 0, 0, 0)] * num_leds
+
+    def set_pixel(self, index: int, r: int, g: int, b: int, brightness: int) -> None:
+        br = max(0, min(31, brightness))
+        self._pixels[index] = (r & 0xFF, g & 0xFF, b & 0xFF, br)
+
+    def show(self) -> None:
+        buf = [0, 0, 0, 0]
+        for r, g, b, br in self._pixels:
+            buf.extend([0xE0 | br, b, g, r])
+        buf.extend([0xFF] * ((self._num_leds + 15) // 16))
+        self._spi.xfer2(buf)
+
+    def close(self) -> None:
+        self._spi.close()

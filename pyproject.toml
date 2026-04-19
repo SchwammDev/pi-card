@@ -11,7 +11,7 @@ dependencies = [
     "piper-tts>=1.2",
     "openai>=1.0",
     "sounddevice>=0.4",
-    "apa102-pi>=2.4",
+    "spidev>=3.6",
 ]
 
 [project.optional-dependencies]
