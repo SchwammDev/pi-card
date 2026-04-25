@@ -47,6 +47,10 @@ class TestIsExitPhrase:
         assert not is_exit_phrase("au revoir", language="en")
         assert not is_exit_phrase("goodbye", language="fr")
 
+    def test_triggers_when_exit_phrase_is_embedded_in_a_longer_utterance(self):
+        assert is_exit_phrase("okay, goodbye", language="en")
+        assert is_exit_phrase("alright that's all for now", language="en")
+
 
 class TestDetectLanguageSwitch:
     @pytest.mark.parametrize("phrase", ["switch to french", "speak french"])
@@ -66,6 +70,10 @@ class TestDetectLanguageSwitch:
     def test_ignores_triggers_meant_for_other_current_language(self):
         # An English trigger shouldn't fire when the current language is French.
         assert detect_language_switch("switch to french", current_language="fr") is None
+
+    def test_triggers_when_switch_phrase_is_embedded_in_a_longer_utterance(self):
+        assert detect_language_switch("and switch to french", current_language="en") == "fr"
+        assert detect_language_switch("please speak french now", current_language="en") == "fr"
 
 
 class TestSwitchAcknowledgement:

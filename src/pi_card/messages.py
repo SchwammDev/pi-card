@@ -38,13 +38,14 @@ _MESSAGES: dict[str, _LanguageMessages] = {
 
 
 def is_exit_phrase(text: str, *, language: str) -> bool:
-    return normalize(text) in _MESSAGES[language].exit_phrases
+    normalised = normalize(text)
+    return any(phrase in normalised for phrase in _MESSAGES[language].exit_phrases)
 
 
 def detect_language_switch(text: str, *, current_language: str) -> str | None:
     normalised = normalize(text)
     for target, phrases in _MESSAGES[current_language].switch_triggers.items():
-        if normalised in phrases:
+        if any(phrase in normalised for phrase in phrases):
             return target
     return None
 
