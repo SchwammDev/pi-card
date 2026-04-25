@@ -11,5 +11,5 @@ agent:
 
 # Optional overrides (defaults shown):
 # language: en            # starting language; "en" or "fr". Switchable mid-session.
-# silence_timeout: 8.0    # seconds of silence before returning to wake-word mode.
+# silence_timeout: 5.0    # seconds of silence before returning to wake-word mode.
 # max_stt_retries: 2      # low-confidence STT retries before giving up.

@@ -43,7 +43,7 @@ def test_config_applies_defaults_when_only_required_fields_provided(tmp_path):
     config = Config.load(path)
 
     assert config.language == "en"
-    assert config.silence_timeout == 8.0
+    assert config.silence_timeout == 5.0
     assert config.max_stt_retries == 2
 
 

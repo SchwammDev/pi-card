@@ -22,7 +22,7 @@ class VoiceAssistant:
         stt: WhisperSTT,
         tts_by_language: dict[str, PiperTTS],
         language: str = "en",
-        silence_timeout: float = 8.0,
+        silence_timeout: float = 5.0,
         max_stt_retries: int = 2,
     ):
         self.audio_in = audio_in
