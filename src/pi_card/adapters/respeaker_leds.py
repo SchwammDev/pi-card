@@ -6,7 +6,7 @@ from pi_card.hardware.leds import LEDController, LEDState
 
 NUM_LEDS = 12
 LED_POWER_GPIO = 5  # ReSpeaker 4-Mic Array: LED rail power-enable
-PULSE_PERIOD_S = 2.0
+PULSE_PERIOD_S = 1.0
 PULSE_STEP_S = 0.05
 BRIGHTNESS_MAX = 20  # APA102 global brightness is 5-bit (0-31)
 
