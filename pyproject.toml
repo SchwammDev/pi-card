@@ -5,7 +5,7 @@ description = "Raspberry Pi AI voice assistant"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "pyyaml>=6.0",
-    "numpy>=1.26",
+    "numpy>=1.26,<2",
     "openwakeword>=0.6",
     "faster-whisper>=1.0",
     "piper-tts>=1.2",
