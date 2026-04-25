@@ -7,7 +7,7 @@ class WakeWordEngine(Protocol):
     def predict(self, frame: bytes) -> dict[str, float]: ...
 
 
-DEFAULT_WAKE_WORD = "computer"
+DEFAULT_WAKE_WORD = "hey_jarvis"
 DEFAULT_THRESHOLD = 0.5
 
 

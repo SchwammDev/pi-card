@@ -4,7 +4,7 @@ from collections import deque
 class FakeWakeWordEngine:
     """Returns pre-scripted detection scores, one dict per frame of audio."""
 
-    def __init__(self, model_name: str = "computer", scores: list[float] | None = None):
+    def __init__(self, model_name: str = "hey_jarvis", scores: list[float] | None = None):
         self._model_name = model_name
         self._scores: deque[float] = deque(scores or [])
         self.frames_seen: list[bytes] = []
