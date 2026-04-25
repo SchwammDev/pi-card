@@ -60,3 +60,12 @@ def test_rejects_pcm_with_odd_byte_length():
 
     with pytest.raises(ValueError):
         stt.transcribe(b"\x00\x00\x00", language="en")
+
+
+def test_enables_vad_filter_to_drop_non_speech_segments():
+    model = FakeWhisperModel({"en": ""})
+    stt = WhisperSTT(model=model)
+
+    stt.transcribe(_silent_pcm(1.0), language="en")
+
+    assert model.calls[-1]["kwargs"].get("vad_filter") is True

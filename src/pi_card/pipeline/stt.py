@@ -27,7 +27,7 @@ class WhisperSTT:
         samples = np.frombuffer(pcm, dtype=np.int16).astype(np.float32)
         samples /= _INT16_FULL_SCALE
 
-        segments, _info = self._model.transcribe(samples, language=language)
+        segments, _info = self._model.transcribe(samples, language=language, vad_filter=True)
         return "".join(segment.text for segment in segments).strip()
 
 
