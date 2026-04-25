@@ -1,59 +1,82 @@
-import sys
+import subprocess
 
 from pi_card.hardware.audio_input import (
     AudioInput,
+    AudioInputExhausted,
     FRAME_SAMPLES,
     SAMPLE_RATE_HZ,
 )
 
 DEFAULT_DEVICE = "ac108"
 NATIVE_CHANNELS = 4
+NATIVE_SAMPLE_BYTES = 4  # S32_LE
 DEFAULT_MIC_CHANNEL = 0
 
 
 class ReSpeakerInput(AudioInput):
-    """AudioInput backed by the ReSpeaker 4-Mic HAT via the AC108 ALSA device.
+    """AudioInput backed by the ReSpeaker 4-Mic HAT via an `arecord` subprocess.
 
-    The HAT's AC108 codec only accepts 4-channel S32_LE capture — asking
-    ALSA to convert to S16_LE/mono via `plughw` wedges the driver. We open
-    the stream in its native format and downmix here: pick one mic channel
-    and take the top 16 bits of each 32-bit sample to land in int16 range."""
+    sounddevice/PortAudio's open path on the AC108 wedges on Pi 5 — almost any
+    kernel I/O activity in the parent process before the open hangs the driver.
+    Driving `arecord` as a child process sidesteps PortAudio entirely; ALSA
+    itself is reliable when accessed directly.
+
+    arecord is told to capture in the codec's native S32_LE / 4-channel format;
+    we downmix in Python by picking one mic channel and taking the top 16 bits
+    of each 32-bit sample to land in int16 range."""
+
+    _frame_bytes_native = FRAME_SAMPLES * NATIVE_CHANNELS * NATIVE_SAMPLE_BYTES
 
     def __init__(
         self,
         *,
-        device: str | int | None = DEFAULT_DEVICE,
+        device: str = DEFAULT_DEVICE,
         channel: int = DEFAULT_MIC_CHANNEL,
     ):
-        import sounddevice as sd  # type: ignore[import-not-found]
-
         self._channel = channel
-        self._stream = sd.RawInputStream(
-            samplerate=SAMPLE_RATE_HZ,
-            blocksize=FRAME_SAMPLES,
-            channels=NATIVE_CHANNELS,
-            dtype="int32",
-            device=device,
+        self._proc = subprocess.Popen(
+            [
+                "arecord",
+                "-D", device,
+                "-q",
+                "-f", "S32_LE",
+                "-r", str(SAMPLE_RATE_HZ),
+                "-c", str(NATIVE_CHANNELS),
+                "-t", "raw",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
-        try:
-            self._stream.start()
-        except Exception:
-            self._stream.close()
-            raise
 
     def read_frame(self) -> bytes:
         import numpy as np
 
-        data, overflowed = self._stream.read(FRAME_SAMPLES)
-        if overflowed:
-            print("audio input overflowed", file=sys.stderr)
-        frame = np.frombuffer(bytes(data), dtype=np.int32).reshape(-1, NATIVE_CHANNELS)
+        data = self._read_exact(self._frame_bytes_native)
+        frame = np.frombuffer(data, dtype=np.int32).reshape(-1, NATIVE_CHANNELS)
         mono = (frame[:, self._channel] >> 16).astype(np.int16)
         return mono.tobytes()
 
+    def _read_exact(self, n: int) -> bytes:
+        assert self._proc.stdout is not None
+        chunks: list[bytes] = []
+        remaining = n
+        while remaining > 0:
+            chunk = self._proc.stdout.read(remaining)
+            if not chunk:
+                raise AudioInputExhausted("arecord stream closed")
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        return b"".join(chunks)
+
     def close(self) -> None:
-        self._stream.stop()
-        self._stream.close()
+        self._proc.terminate()
+        try:
+            self._proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            self._proc.kill()
+            self._proc.wait()
+        if self._proc.stdout is not None:
+            self._proc.stdout.close()
 
     def __enter__(self) -> "ReSpeakerInput":
         return self
