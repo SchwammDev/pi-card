@@ -1,6 +1,7 @@
 import argparse
 import logging
 import logging.handlers
+import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -72,6 +73,7 @@ def configure_logging(
 
     root = logging.getLogger()
     _remove_rotating_file_handlers(root)
+    _remove_stderr_stream_handlers(root)
     root.setLevel(level)
     errors_handler = logging.handlers.RotatingFileHandler(
         log_dir / "errors.log",
@@ -80,6 +82,10 @@ def configure_logging(
     )
     errors_handler.setFormatter(formatter)
     root.addHandler(errors_handler)
+
+    console_handler = logging.StreamHandler(sys.stderr)
+    console_handler.setFormatter(formatter)
+    root.addHandler(console_handler)
 
     transcripts = logging.getLogger(TRANSCRIPTS_LOGGER_NAME)
     _remove_rotating_file_handlers(transcripts)
@@ -103,6 +109,16 @@ def _remove_rotating_file_handlers(logger: logging.Logger) -> None:
         if isinstance(handler, logging.handlers.RotatingFileHandler):
             logger.removeHandler(handler)
             handler.close()
+
+
+def _remove_stderr_stream_handlers(logger: logging.Logger) -> None:
+    for handler in list(logger.handlers):
+        if (
+            isinstance(handler, logging.StreamHandler)
+            and not isinstance(handler, logging.handlers.RotatingFileHandler)
+            and getattr(handler, "stream", None) is sys.stderr
+        ):
+            logger.removeHandler(handler)
 
 
 def build_assistant(config: Config) -> VoiceAssistant:

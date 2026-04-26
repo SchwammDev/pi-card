@@ -124,6 +124,63 @@ def test_transcripts_do_not_leak_into_errors_log(tmp_path, isolated_logging):
     assert "secret" not in errors_text
 
 
+def test_configure_logging_emits_to_console_at_requested_level(
+    tmp_path, isolated_logging, capsys
+):
+    cli.configure_logging(log_dir=tmp_path, level="INFO", debug_transcripts=False)
+    logging.getLogger("pi_card.something").info("visible on console")
+    for handler in logging.getLogger().handlers:
+        handler.flush()
+
+    captured = capsys.readouterr()
+    assert "visible on console" in captured.err
+
+
+def test_configure_logging_console_respects_level(
+    tmp_path, isolated_logging, capsys
+):
+    cli.configure_logging(log_dir=tmp_path, level="WARNING", debug_transcripts=False)
+    logging.getLogger("pi_card.something").info("info should be hidden")
+    logging.getLogger("pi_card.something").warning("warning should appear")
+    for handler in logging.getLogger().handlers:
+        handler.flush()
+
+    captured = capsys.readouterr()
+    assert "info should be hidden" not in captured.err
+    assert "warning should appear" in captured.err
+
+
+def test_console_handler_is_added_only_once_when_configure_repeats(
+    tmp_path, isolated_logging
+):
+    cli.configure_logging(log_dir=tmp_path, level="INFO", debug_transcripts=False)
+    cli.configure_logging(log_dir=tmp_path, level="INFO", debug_transcripts=False)
+
+    import sys
+
+    stderr_handlers = [
+        h
+        for h in logging.getLogger().handlers
+        if isinstance(h, logging.StreamHandler)
+        and not isinstance(h, logging.handlers.RotatingFileHandler)
+        and getattr(h, "stream", None) is sys.stderr
+    ]
+    assert len(stderr_handlers) == 1
+
+
+def test_transcripts_do_not_leak_to_console(tmp_path, isolated_logging, capsys):
+    cli.configure_logging(log_dir=tmp_path, level="INFO", debug_transcripts=True)
+    logging.getLogger(cli.TRANSCRIPTS_LOGGER_NAME).info("user: secret")
+    for handler in logging.getLogger(cli.TRANSCRIPTS_LOGGER_NAME).handlers:
+        handler.flush()
+    for handler in logging.getLogger().handlers:
+        handler.flush()
+
+    captured = capsys.readouterr()
+    assert "secret" not in captured.err
+    assert "secret" not in captured.out
+
+
 def test_configure_logging_is_idempotent(tmp_path, isolated_logging):
     cli.configure_logging(log_dir=tmp_path, level="INFO", debug_transcripts=False)
     cli.configure_logging(log_dir=tmp_path, level="INFO", debug_transcripts=True)
