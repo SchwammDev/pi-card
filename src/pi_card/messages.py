@@ -21,7 +21,7 @@ class _LanguageMessages:
 
 _MESSAGES: dict[str, _LanguageMessages] = {
     "en": _LanguageMessages(
-        exit_phrases=("goodbye", "that's all"),
+        exit_phrases=("goodbye", "good bye", "bye", "that's all"),
         switch_triggers={"fr": ("switch to french", "speak french")},
         switch_ack="Okay, I'll speak English now.",
         network_error_cue="I can't reach my brain right now.",

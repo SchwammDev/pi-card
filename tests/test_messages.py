@@ -29,8 +29,12 @@ class TestNormalize:
 
 
 class TestIsExitPhrase:
-    @pytest.mark.parametrize("phrase", ["goodbye", "that's all"])
+    @pytest.mark.parametrize("phrase", ["goodbye", "good bye", "bye", "that's all"])
     def test_recognises_english_exit_phrases(self, phrase):
+        assert is_exit_phrase(phrase, language="en")
+
+    @pytest.mark.parametrize("phrase", ["Good bye!", "Bye.", "good bye now"])
+    def test_recognises_whisper_variants_of_goodbye(self, phrase):
         assert is_exit_phrase(phrase, language="en")
 
     @pytest.mark.parametrize("phrase", ["au revoir", "c'est tout"])
