@@ -6,6 +6,7 @@ from pi_card.hardware.ai_agent import AIAgent
 from pi_card.hardware.audio_input import AudioInput
 from pi_card.hardware.audio_output import AudioOutput
 from pi_card.hardware.leds import LEDController, LEDState
+from pi_card.pipeline.speech_detector import SpeechDetector
 from pi_card.pipeline.stt import WhisperSTT
 from pi_card.pipeline.tts import PiperTTS
 from pi_card.pipeline.wake_word import WakeWordDetector
@@ -26,11 +27,11 @@ class VoiceAssistant:
         wake_word_detector: WakeWordDetector,
         stt: WhisperSTT,
         tts_by_language: dict[str, PiperTTS],
+        speech_detector: SpeechDetector,
         language: str = "en",
         silence_timeout: float = 5.0,
         max_stt_retries: int = 2,
         pause_tolerance: float = 1.5,
-        speech_rms_threshold: int = 1500,
         ready_pulse_s: float = DEFAULT_READY_PULSE_S,
     ):
         self.audio_in = audio_in
@@ -40,11 +41,11 @@ class VoiceAssistant:
         self.wake_word_detector = wake_word_detector
         self.stt = stt
         self.tts_by_language = tts_by_language
+        self.speech_detector = speech_detector
         self.language = language
         self.silence_timeout = silence_timeout
         self.max_stt_retries = max_stt_retries
         self.pause_tolerance = pause_tolerance
-        self.speech_rms_threshold = speech_rms_threshold
         self.ready_pulse_s = ready_pulse_s
 
     def run(self) -> None:
@@ -70,9 +71,9 @@ class VoiceAssistant:
             agent=self.agent,
             stt=self.stt,
             tts_by_language=self.tts_by_language,
+            speech_detector=self.speech_detector,
             initial_language=self.language,
             silence_timeout_ms=int(self.silence_timeout * 1000),
             max_stt_retries=self.max_stt_retries,
             pause_tolerance_ms=int(self.pause_tolerance * 1000),
-            speech_rms_threshold=self.speech_rms_threshold,
         )

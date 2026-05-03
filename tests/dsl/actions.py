@@ -7,7 +7,10 @@ from pi_card.hardware.audio_input import (
 from tests.dsl.world import World
 
 _SILENCE_FRAME = b"\x00" * FRAME_BYTES
-_SPEECH_FRAME = b"\x00\x10" * (FRAME_BYTES // 2)  # amplitude 4096 samples
+_SPEECH_FRAME = b"\x01" * FRAME_BYTES
+
+_USER_SAYS_SPEECH_FRAMES = 2
+_USER_SAYS_TRAILING_SILENCE_FRAMES = 20
 
 
 def trigger_wake_word(world: World) -> None:
@@ -18,8 +21,12 @@ def trigger_wake_word(world: World) -> None:
 
 def user_says(world: World, text: str, *, language: str) -> None:
     """Queue speech-shaped audio + trailing silence, and queue the STT transcript for the language."""
-    world.audio_in.queue(_SPEECH_FRAME * 2)
-    world.audio_in.queue(_SILENCE_FRAME * 20)
+    world.audio_in.queue(_SPEECH_FRAME * _USER_SAYS_SPEECH_FRAMES)
+    world.audio_in.queue(_SILENCE_FRAME * _USER_SAYS_TRAILING_SILENCE_FRAMES)
+    world.speech_detector.queue(
+        *([True] * _USER_SAYS_SPEECH_FRAMES),
+        *([False] * _USER_SAYS_TRAILING_SILENCE_FRAMES),
+    )
     world.whisper.queue_transcript(language, text)
 
 
@@ -27,6 +34,7 @@ def user_stays_silent(world: World, *, ms: int = 800) -> None:
     """Queue silence long enough for the conversation's silence timeout to fire."""
     frames = max(1, ms // FRAME_DURATION_MS)
     world.audio_in.queue(_SILENCE_FRAME * frames)
+    world.speech_detector.queue(*([False] * frames))
 
 
 def assistant_will_reply(world: World, text: str) -> None:

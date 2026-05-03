@@ -13,6 +13,7 @@ from pi_card.messages import (
     switch_acknowledgement,
 )
 from pi_card.pipeline.capture import SilenceTimeout, Utterance, capture_utterance
+from pi_card.pipeline.speech_detector import SpeechDetector
 from pi_card.pipeline.stt import WhisperSTT
 from pi_card.pipeline.tts import PiperTTS
 
@@ -37,11 +38,11 @@ class Conversation:
         agent: AIAgent,
         stt: WhisperSTT,
         tts_by_language: dict[str, PiperTTS],
+        speech_detector: SpeechDetector,
         initial_language: str,
         silence_timeout_ms: int,
         max_stt_retries: int,
         pause_tolerance_ms: int,
-        speech_rms_threshold: int,
     ):
         self._audio_in = audio_in
         self._audio_out = audio_out
@@ -49,11 +50,11 @@ class Conversation:
         self._agent = agent
         self._stt = stt
         self._tts_by_language = tts_by_language
+        self._speech_detector = speech_detector
         self._language = initial_language
         self._silence_timeout_ms = silence_timeout_ms
         self._max_stt_retries = max_stt_retries
         self._pause_tolerance_ms = pause_tolerance_ms
-        self._speech_rms_threshold = speech_rms_threshold
         self._history: list[Message] = [Message(role="system", content=SYSTEM_PROMPT)]
 
     def run(self) -> str:
@@ -102,9 +103,9 @@ class Conversation:
             self._audio_in.drain_pending()
             result = capture_utterance(
                 self._audio_in,
+                self._speech_detector,
                 silence_ms_no_speech=self._silence_timeout_ms,
                 silence_ms_after_speech=self._pause_tolerance_ms,
-                speech_rms_threshold=self._speech_rms_threshold,
             )
             if isinstance(result, SilenceTimeout):
                 return None

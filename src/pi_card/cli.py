@@ -146,6 +146,7 @@ def build_assistant(config: Config) -> VoiceAssistant:
     from pi_card.adapters.respeaker_input import ReSpeakerInput
     from pi_card.adapters.respeaker_leds import ReSpeakerLEDs
     from pi_card.adapters.usb_speaker import USBSpeakerOutput
+    from pi_card.pipeline.speech_detector import load_silero_speech_detector
     from pi_card.pipeline.stt import WhisperSTT, load_faster_whisper_model
     from pi_card.pipeline.tts import PiperTTS, load_piper_voice
     from pi_card.pipeline.wake_word import WakeWordDetector, load_openwakeword_engine
@@ -166,11 +167,11 @@ def build_assistant(config: Config) -> VoiceAssistant:
             "en": PiperTTS(voice=load_piper_voice(EN_VOICE)),
             "fr": PiperTTS(voice=load_piper_voice(FR_VOICE)),
         },
+        speech_detector=load_silero_speech_detector(),
         language=config.language,
         silence_timeout=config.silence_timeout,
         max_stt_retries=config.max_stt_retries,
         pause_tolerance=config.pause_tolerance,
-        speech_rms_threshold=config.speech_rms_threshold,
     )
 
 

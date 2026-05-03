@@ -11,6 +11,7 @@ from tests.fakes.audio_input import FakeAudioInput
 from tests.fakes.audio_output import FakeAudioOutput
 from tests.fakes.leds import FakeLEDController
 from tests.fakes.piper_voice import FakePiperVoice
+from tests.fakes.speech_detector import ScriptedSpeechDetector
 from tests.fakes.wake_word_engine import FakeWakeWordEngine
 from tests.fakes.whisper_model import FakeWhisperModel
 
@@ -56,6 +57,11 @@ def fake_fr_voice():
 
 
 @pytest.fixture
+def fake_speech_detector():
+    return ScriptedSpeechDetector()
+
+
+@pytest.fixture
 def assistant(
     fake_audio_in,
     fake_audio_out,
@@ -65,6 +71,7 @@ def assistant(
     fake_whisper_model,
     fake_en_voice,
     fake_fr_voice,
+    fake_speech_detector,
 ):
     return VoiceAssistant(
         audio_in=fake_audio_in,
@@ -77,6 +84,7 @@ def assistant(
             "en": PiperTTS(voice=fake_en_voice),
             "fr": PiperTTS(voice=fake_fr_voice),
         },
+        speech_detector=fake_speech_detector,
         language="en",
         silence_timeout=0.5,
         max_stt_retries=2,
@@ -95,6 +103,7 @@ def world(
     fake_whisper_model,
     fake_en_voice,
     fake_fr_voice,
+    fake_speech_detector,
 ):
     return World(
         assistant=assistant,
@@ -105,4 +114,5 @@ def world(
         wake_word_engine=fake_wake_word_engine,
         whisper=fake_whisper_model,
         voices={"en": fake_en_voice, "fr": fake_fr_voice},
+        speech_detector=fake_speech_detector,
     )

@@ -7,6 +7,7 @@ from tests.fakes.audio_input import FakeAudioInput
 from tests.fakes.audio_output import FakeAudioOutput
 from tests.fakes.leds import FakeLEDController
 from tests.fakes.piper_voice import FakePiperVoice
+from tests.fakes.speech_detector import ScriptedSpeechDetector
 from tests.fakes.wake_word_engine import FakeWakeWordEngine
 from tests.fakes.whisper_model import FakeWhisperModel
 
@@ -23,3 +24,4 @@ class World:
     wake_word_engine: FakeWakeWordEngine
     whisper: FakeWhisperModel
     voices: dict[str, FakePiperVoice]
+    speech_detector: ScriptedSpeechDetector

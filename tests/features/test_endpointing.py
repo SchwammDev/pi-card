@@ -6,31 +6,19 @@ from pi_card.conversation import Conversation
 from pi_card.hardware.audio_input import FRAME_BYTES, FRAME_SAMPLES
 from pi_card.pipeline.stt import WhisperSTT
 from pi_card.pipeline.tts import PiperTTS
+from tests.fakes.speech_detector import ScriptedSpeechDetector
 
 
-def _frame_at_amplitude(amplitude: int) -> bytes:
-    return amplitude.to_bytes(2, "little", signed=True) * (FRAME_BYTES // 2)
-
-
-SILENCE_FRAME = _frame_at_amplitude(0)
-SPEECH_FRAME = _frame_at_amplitude(8192)
-QUIET_SPEECH_FRAME = _frame_at_amplitude(1000)
+SPEECH_FRAME = b"\x01" * FRAME_BYTES
+SILENCE_FRAME = b"\x00" * FRAME_BYTES
 
 
 def test_natural_pause_in_speech_does_not_end_the_user_turn_early(scenario):
     user_speaks_with_a_natural_one_second_pause(scenario)
 
-    run_one_turn(scenario, pause_tolerance_ms=1500, speech_rms_threshold=1500)
+    run_one_turn(scenario, pause_tolerance_ms=1500)
 
     assert_stt_received_at_least_frames(scenario, frames=30)
-
-
-def test_quieter_speech_is_recognized_when_the_speech_threshold_is_lowered(scenario):
-    user_speaks_quietly(scenario)
-
-    run_one_turn(scenario, pause_tolerance_ms=1500, speech_rms_threshold=500)
-
-    assert_stt_received_at_least_frames(scenario, frames=4)
 
 
 @dataclass
@@ -42,12 +30,13 @@ class Scenario:
     whisper: object
     en_voice: object
     fr_voice: object
+    speech_detector: ScriptedSpeechDetector
 
 
 @pytest.fixture
 def scenario(
     fake_audio_in, fake_audio_out, fake_leds, fake_agent,
-    fake_whisper_model, fake_en_voice, fake_fr_voice,
+    fake_whisper_model, fake_en_voice, fake_fr_voice, fake_speech_detector,
 ):
     fake_whisper_model.set_transcript("en", "hello")
     fake_agent.queue("hi")
@@ -55,20 +44,18 @@ def scenario(
         audio_in=fake_audio_in, audio_out=fake_audio_out, leds=fake_leds,
         agent=fake_agent, whisper=fake_whisper_model,
         en_voice=fake_en_voice, fr_voice=fake_fr_voice,
+        speech_detector=fake_speech_detector,
     )
 
 
 def user_speaks_with_a_natural_one_second_pause(scenario: Scenario) -> None:
-    scenario.audio_in.queue(
-        SPEECH_FRAME * 2 + SILENCE_FRAME * 13 + SPEECH_FRAME * 2 + SILENCE_FRAME * 100
-    )
+    pattern = "VV" + "S" * 13 + "VV" + "S" * 100
+    frames = {"V": SPEECH_FRAME, "S": SILENCE_FRAME}
+    scenario.audio_in.queue(b"".join(frames[c] for c in pattern))
+    scenario.speech_detector.queue(*[c == "V" for c in pattern])
 
 
-def user_speaks_quietly(scenario: Scenario) -> None:
-    scenario.audio_in.queue(QUIET_SPEECH_FRAME * 4 + SILENCE_FRAME * 100)
-
-
-def run_one_turn(scenario: Scenario, *, pause_tolerance_ms: int, speech_rms_threshold: int) -> None:
+def run_one_turn(scenario: Scenario, *, pause_tolerance_ms: int) -> None:
     Conversation(
         audio_in=scenario.audio_in,
         audio_out=scenario.audio_out,
@@ -79,11 +66,11 @@ def run_one_turn(scenario: Scenario, *, pause_tolerance_ms: int, speech_rms_thre
             "en": PiperTTS(voice=scenario.en_voice),
             "fr": PiperTTS(voice=scenario.fr_voice),
         },
+        speech_detector=scenario.speech_detector,
         initial_language="en",
         silence_timeout_ms=500,
         max_stt_retries=2,
         pause_tolerance_ms=pause_tolerance_ms,
-        speech_rms_threshold=speech_rms_threshold,
     ).run()
 
 

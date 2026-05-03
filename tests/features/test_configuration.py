@@ -142,18 +142,6 @@ def test_config_overrides_pause_tolerance(tmp_path):
     assert config.pause_tolerance == 2.0
 
 
-def test_config_default_speech_rms_threshold_matches_capture_default(tmp_path):
-    config = _load_with_overrides(tmp_path)
-
-    assert config.speech_rms_threshold == 1500
-
-
-def test_config_overrides_speech_rms_threshold(tmp_path):
-    config = _load_with_overrides(tmp_path, speech_rms_threshold=800)
-
-    assert config.speech_rms_threshold == 800
-
-
 def test_config_fails_fast_when_file_does_not_exist(tmp_path):
     with pytest.raises(ConfigError) as excinfo:
         Config.load(tmp_path / "does-not-exist.yaml")
