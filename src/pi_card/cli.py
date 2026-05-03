@@ -20,8 +20,8 @@ EN_VOICE = "en_GB-alan-medium"
 FR_VOICE = "fr_FR-siwis-medium"
 
 WHISPER_INITIAL_PROMPTS = {
-    "en": "Voice assistant conversation. The user asks short factual questions; the assistant answers briefly.",
-    "fr": "Conversation avec un assistant vocal. L'utilisateur pose des questions courtes; l'assistant répond brièvement.",
+    "en": "A spoken conversation between a user and a voice assistant.",
+    "fr": "Une conversation orale entre un utilisateur et un assistant vocal.",
 }
 
 
