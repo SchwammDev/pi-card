@@ -87,6 +87,7 @@ def assistant(
         speech_detector=fake_speech_detector,
         language="en",
         silence_timeout=0.5,
+        min_silence_duration_ms=500,
         max_stt_retries=2,
         ready_pulse_s=0,
     )
