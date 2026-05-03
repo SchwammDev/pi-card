@@ -8,10 +8,18 @@
 
 ## What v2 must do
 
-1. **Replace energy VAD with silero-vad.** Solves false endpointing (deliberate-thinking pauses no longer cut off) and noise-as-utterance (silero won't commit ambient noise). Obsoletes `pause_tolerance` and `speech_rms_threshold` config knobs — plan their removal/repurposing as part of the change.
+1. **Replace energy VAD with silero-vad.** Solves false endpointing (deliberate-thinking pauses no longer cut off) and noise-as-utterance (silero won't commit ambient noise). Drops `speech_rms_threshold`; renames `pause_tolerance` → `min_silence_duration_ms` (silero's vocabulary, int ms, end-to-end single unit).
 2. **Stream LLM output into TTS in sentence-sized chunks.** First spoken word arrives much sooner; users stop perceiving sluggishness.
 
 Order: **silero-vad first** (UX-blocking — device is hard to use without it), **streaming second** (performance polish).
+
+### Design decisions for silero-vad replacement
+
+- **Dependency:** `onnxruntime` directly, not the `silero-vad` PyPI package — the latter pulls full torch + CUDA wheels (~3 GB), unusable on a Pi 4. `onnxruntime` is ~50 MB with an aarch64 manylinux wheel.
+- **Model file:** `silero_vad.onnx` (2.3 MB) fetched by `make install` alongside Piper voices. Same mental model for "where models live"; not committed to the repo.
+- **Interface:** new `SpeechDetector` ABC with `is_speech(frame) -> bool` and `reset()`. Production wires `SileroSpeechDetector` (wraps an `onnxruntime.InferenceSession`); tests wire a scripted fake.
+- **State machine stays:** `capture_utterance`'s start-debounce / preroll / trailing-silence / max-duration logic is preserved. Only `_is_speech` is replaced; the detector is injected.
+- **Frame-size bridging:** audio frames are 1280 samples (80 ms), silero wants 512 samples (32 ms) — non-integer ratio. `SileroSpeechDetector` buffers samples internally, drains full 512-sample windows per call, aggregates per-window probabilities into one bool, holds the remainder for the next call. `reset()` flushes between utterances.
 
 ## Out of scope for v2
 
