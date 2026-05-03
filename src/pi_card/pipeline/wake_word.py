@@ -41,7 +41,10 @@ def load_openwakeword_engine(model_name: str = DEFAULT_WAKE_WORD) -> WakeWordEng
     """Build the production openWakeWord engine. Imported lazily so tests
     don't require the openwakeword package."""
     from openwakeword.model import Model  # type: ignore[import-not-found]
+    from openwakeword.utils import download_models  # type: ignore[import-not-found]
     import numpy as np
+
+    download_models()
 
     model = Model(wakeword_models=[model_name])
 
