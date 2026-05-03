@@ -39,6 +39,7 @@ class VoiceAssistant:
     def run(self) -> None:
         while True:
             self.leds.set_state(LEDState.OFF)
+            self.audio_in.drain_pending()
             self.wake_word_detector.wait_for_wake_word(self.audio_in)
             self.language = self._new_conversation().run()
 

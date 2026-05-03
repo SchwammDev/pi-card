@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 from pi_card.hardware.audio_input import (
@@ -11,6 +12,22 @@ DEFAULT_DEVICE = "ac108"
 NATIVE_CHANNELS = 4
 NATIVE_SAMPLE_BYTES = 4  # S32_LE
 DEFAULT_MIC_CHANNEL = 0
+_DRAIN_CHUNK_BYTES = 65_536
+
+
+def _drain_pipe_nonblocking(fd: int) -> None:
+    previous_blocking = os.get_blocking(fd)
+    os.set_blocking(fd, False)
+    try:
+        while True:
+            try:
+                chunk = os.read(fd, _DRAIN_CHUNK_BYTES)
+            except BlockingIOError:
+                return
+            if not chunk:
+                return
+    finally:
+        os.set_blocking(fd, previous_blocking)
 
 
 class ReSpeakerInput(AudioInput):
@@ -55,6 +72,10 @@ class ReSpeakerInput(AudioInput):
         frame = np.frombuffer(data, dtype=np.int32).reshape(-1, NATIVE_CHANNELS)
         mono = (frame[:, self._channel] >> 16).astype(np.int16)
         return mono.tobytes()
+
+    def drain_pending(self) -> None:
+        assert self._proc.stdout is not None
+        _drain_pipe_nonblocking(self._proc.stdout.fileno())
 
     def _read_exact(self, n: int) -> bytes:
         assert self._proc.stdout is not None

@@ -12,6 +12,7 @@ class FakeAudioInput(AudioInput):
 
     def __init__(self, frames: list[bytes] | None = None):
         self._frames: deque[bytes] = deque(frames or [])
+        self.drain_pending_call_count = 0
 
     def queue(self, pcm: bytes) -> None:
         """Append raw PCM, split into FRAME_BYTES chunks with trailing silence padding."""
@@ -25,3 +26,6 @@ class FakeAudioInput(AudioInput):
         if not self._frames:
             raise AudioInputExhausted
         return self._frames.popleft()
+
+    def drain_pending(self) -> None:
+        self.drain_pending_call_count += 1

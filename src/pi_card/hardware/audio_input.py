@@ -22,3 +22,6 @@ class AudioInput(ABC):
     @abstractmethod
     def read_frame(self) -> bytes:
         """Return the next audio frame. Raise AudioInputExhausted when the stream ends."""
+
+    def drain_pending(self) -> None:
+        return None

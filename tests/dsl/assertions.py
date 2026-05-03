@@ -94,6 +94,15 @@ def _assistant_messages_in(call: list[Message]) -> list[str]:
     return [m.content or "" for m in call if m.role == "assistant"]
 
 
+def assert_input_was_drained_per_wake_word_session(world: World, *, sessions: int) -> None:
+    actual = world.audio_in.drain_pending_call_count
+    if actual < sessions:
+        raise AssertionError(
+            f"expected audio input to be drained at least {sessions} time(s) "
+            f"(once per wake-word session); got {actual}"
+        )
+
+
 def assert_last_call_included_prior_assistant_reply(world: World, text: str) -> None:
     last_call = world.agent.received[-1]
     if not any(text in reply for reply in _assistant_messages_in(last_call)):

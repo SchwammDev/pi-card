@@ -37,3 +37,21 @@ def test_queue_splits_raw_pcm_into_frame_sized_chunks():
     assert audio.read_frame() == b"\x01" * FRAME_BYTES
     with pytest.raises(AudioInputExhausted):
         audio.read_frame()
+
+
+def test_drain_pending_is_a_noop_for_test_queued_audio():
+    frame = b"\x01" * FRAME_BYTES
+    audio = FakeAudioInput(frames=[frame])
+
+    audio.drain_pending()
+
+    assert audio.read_frame() == frame
+
+
+def test_drain_pending_records_each_invocation():
+    audio = FakeAudioInput()
+
+    audio.drain_pending()
+    audio.drain_pending()
+
+    assert audio.drain_pending_call_count == 2
