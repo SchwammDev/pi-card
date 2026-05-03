@@ -6,6 +6,8 @@ from pi_card.hardware.audio_input import AudioInput
 class WakeWordEngine(Protocol):
     def predict(self, frame: bytes) -> dict[str, float]: ...
 
+    def reset(self) -> None: ...
+
 
 DEFAULT_WAKE_WORD = "hey_jarvis"
 DEFAULT_THRESHOLD = 0.5
@@ -27,6 +29,7 @@ class WakeWordDetector:
         self._threshold = threshold
 
     def wait_for_wake_word(self, audio_in: AudioInput) -> None:
+        self._engine.reset()
         while True:
             frame = audio_in.read_frame()
             scores = self._engine.predict(frame)
@@ -46,5 +49,8 @@ def load_openwakeword_engine(model_name: str = DEFAULT_WAKE_WORD) -> WakeWordEng
         def predict(self, frame: bytes) -> dict[str, float]:
             samples = np.frombuffer(frame, dtype=np.int16)
             return dict(model.predict(samples))
+
+        def reset(self) -> None:
+            model.reset()
 
     return _Adapter()

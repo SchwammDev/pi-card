@@ -103,6 +103,23 @@ def assert_input_was_drained_per_wake_word_session(world: World, *, sessions: in
         )
 
 
+def assert_input_was_drained_at_least(world: World, *, times: int) -> None:
+    actual = world.audio_in.drain_pending_call_count
+    if actual < times:
+        raise AssertionError(
+            f"expected audio input to be drained at least {times} time(s); got {actual}"
+        )
+
+
+def assert_wake_word_engine_was_reset_per_session(world: World, *, sessions: int) -> None:
+    actual = world.wake_word_engine.reset_call_count
+    if actual < sessions:
+        raise AssertionError(
+            f"expected wake-word engine to be reset at least {sessions} time(s) "
+            f"(once per wake-word session); got {actual}"
+        )
+
+
 def assert_last_call_included_prior_assistant_reply(world: World, text: str) -> None:
     last_call = world.agent.received[-1]
     if not any(text in reply for reply in _assistant_messages_in(last_call)):

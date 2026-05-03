@@ -15,10 +15,12 @@ from tests.dsl.assertions import (
     assert_assistant_spoke,
     assert_conversation_started_fresh_at_call,
     assert_history_accumulated_within_conversation,
+    assert_input_was_drained_at_least,
     assert_input_was_drained_per_wake_word_session,
     assert_last_call_included_prior_assistant_reply,
     assert_led_went_through,
     assert_returned_to_wake_word_mode,
+    assert_wake_word_engine_was_reset_per_session,
 )
 
 
@@ -169,6 +171,17 @@ def test_exit_phrase_is_not_sent_to_the_agent(world):
     assert_agent_was_called(world, times=1)
 
 
+def _run_conversation_with_two_turns_then_goodbye(world):
+    trigger_wake_word(world)
+    user_says(world, "Hello", language="en")
+    assistant_will_reply(world, "Hi.")
+    user_says(world, "What's the weather?", language="en")
+    assistant_will_reply(world, "Sunny.")
+    user_says(world, "Goodbye", language="en")
+
+    run_until_exhausted(world)
+
+
 def _run_two_back_to_back_conversations(world):
     trigger_wake_word(world)
     user_says(world, "Hello", language="en")
@@ -186,6 +199,18 @@ def test_input_is_drained_before_each_wake_word_session(world):
     _run_two_back_to_back_conversations(world)
 
     assert_input_was_drained_per_wake_word_session(world, sessions=2)
+
+
+def test_input_is_drained_before_each_capture_turn_within_a_conversation(world):
+    _run_conversation_with_two_turns_then_goodbye(world)
+
+    assert_input_was_drained_at_least(world, times=4)
+
+
+def test_wake_word_engine_state_is_reset_between_conversations(world):
+    _run_two_back_to_back_conversations(world)
+
+    assert_wake_word_engine_was_reset_per_session(world, sessions=2)
 
 
 def test_wake_word_command_alone_with_no_speech_returns_to_wake_word_mode(world):

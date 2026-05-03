@@ -8,6 +8,7 @@ class FakeWakeWordEngine:
         self._model_name = model_name
         self._scores: deque[float] = deque(scores or [])
         self.frames_seen: list[bytes] = []
+        self.reset_call_count = 0
 
     def queue_score(self, score: float) -> None:
         self._scores.append(score)
@@ -16,3 +17,6 @@ class FakeWakeWordEngine:
         self.frames_seen.append(frame)
         score = self._scores.popleft() if self._scores else 0.0
         return {self._model_name: score}
+
+    def reset(self) -> None:
+        self.reset_call_count += 1

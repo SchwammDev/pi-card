@@ -95,6 +95,7 @@ class Conversation:
         """
         for attempt in range(self._max_stt_retries + 1):
             self._leds.set_state(LEDState.LISTENING)
+            self._audio_in.drain_pending()
             result = capture_utterance(
                 self._audio_in,
                 silence_ms_no_speech=self._silence_timeout_ms,

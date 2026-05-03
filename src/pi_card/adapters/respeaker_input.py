@@ -1,3 +1,4 @@
+import io
 import os
 import subprocess
 
@@ -15,13 +16,14 @@ DEFAULT_MIC_CHANNEL = 0
 _DRAIN_CHUNK_BYTES = 65_536
 
 
-def _drain_pipe_nonblocking(fd: int) -> None:
+def _drain_pipe_nonblocking(reader: io.BufferedReader) -> None:
+    fd = reader.fileno()
     previous_blocking = os.get_blocking(fd)
     os.set_blocking(fd, False)
     try:
         while True:
             try:
-                chunk = os.read(fd, _DRAIN_CHUNK_BYTES)
+                chunk = reader.read1(_DRAIN_CHUNK_BYTES)
             except BlockingIOError:
                 return
             if not chunk:
@@ -75,7 +77,7 @@ class ReSpeakerInput(AudioInput):
 
     def drain_pending(self) -> None:
         assert self._proc.stdout is not None
-        _drain_pipe_nonblocking(self._proc.stdout.fileno())
+        _drain_pipe_nonblocking(self._proc.stdout)
 
     def _read_exact(self, n: int) -> bytes:
         assert self._proc.stdout is not None

@@ -68,23 +68,35 @@ def test_matches_configured_wake_word_name():
     detector.wait_for_wake_word(audio)
 
 
+class _MultiModelScriptedEngine:
+    def __init__(self, *, scripted_calls: list[dict[str, float]]):
+        self._scripted_calls = scripted_calls
+        self.call = 0
+
+    def predict(self, frame):
+        scores = self._scripted_calls[self.call]
+        self.call += 1
+        return scores
+
+    def reset(self):
+        pass
+
+
 def test_ignores_scores_for_other_wake_words():
-    class NoisyEngine:
-        def __init__(self):
-            self.call = 0
+    engine = _engine_that_peaks_alexa_then_computer()
 
-        def predict(self, frame):
-            self.call += 1
-            if self.call == 1:
-                return {"alexa": 0.99, "computer": 0.1}
-            return {"alexa": 0.2, "computer": 0.9}
-
-    audio = FakeAudioInput(frames=[SILENCE_FRAME, SILENCE_FRAME, SILENCE_FRAME])
-    engine = NoisyEngine()
-    detector = WakeWordDetector(
-        engine=engine, model_name="computer", threshold=0.5
-    )
-
-    detector.wait_for_wake_word(audio)
+    _detect(engine, target="computer")
 
     assert engine.call == 2
+
+
+def _engine_that_peaks_alexa_then_computer():
+    return _MultiModelScriptedEngine(scripted_calls=[
+        {"alexa": 0.99, "computer": 0.1},
+        {"alexa": 0.2, "computer": 0.9},
+    ])
+
+
+def _detect(engine, *, target: str):
+    audio = FakeAudioInput(frames=[SILENCE_FRAME] * 3)
+    WakeWordDetector(engine=engine, model_name=target, threshold=0.5).wait_for_wake_word(audio)
