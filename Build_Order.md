@@ -68,6 +68,7 @@ Pass criteria:
 - `Makefile` targets: `install`, `run`, `service`, `uninstall`, `clean`
 - systemd unit for auto-start
 - `config.yaml.example` with all defaults documented
+- Custom "Computer" wake-word model — openWakeWord doesn't ship one. Train or source a `computer.tflite`, drop it into the runtime model dir on first use (mirror `load_piper_voice`'s pattern), and pass `model_name="computer"` from `cli.py` to `WakeWordDetector`. Currently the default `hey_jarvis` is a stand-in — the spec in `Project_Overview.md` calls for "Computer".
 
 **Done when:** `make install && make service` brings the assistant up on a fresh Pi *and* the ears-only gate below passes.
 
@@ -95,7 +96,7 @@ Pass criteria:
 - `make install`: no errors, default config written, venv created.
 - `make run` (after filling in `base_url`, `api_key`, `model`): assistant comes up, wake word works, one round-trip succeeds.
 - `make service` + reboot: after boot, with no manual intervention, saying "Computer" gets a response.
-- `journalctl -u pi-card` clean — anything noisy on a clean install is a packaging bug worth fixing now.
+- `journalctl --user -u pi-card.service` clean — anything noisy on a clean install is a packaging bug worth fixing now.
 - `make uninstall`: service stopped and removed, no leftover files outside the repo.
 
 ## Out of Scope for v1

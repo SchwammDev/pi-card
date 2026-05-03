@@ -127,7 +127,7 @@ print(f"{time.perf_counter() - t0:.2f}s  →  {reply}")
 
 Run each with `uv run python playground/<name>.py`. Method names above are placeholders — adjust to whatever you actually built.
 
-## Phase 4 — Full conversation, ears only
+## Phase 5 — Full conversation, ears only
 
 ```bash
 uv run python -m pi_card --log-level INFO --debug-transcripts
@@ -139,9 +139,20 @@ Run through the conversation script listed in `Build_Order.md` (wake word, follo
 
 ## Phase 5 — Fresh-Pi install
 
-- Flash a clean Raspberry Pi OS image, configure the ReSpeaker HAT per its vendor instructions, then clone this repo.
+- Flash a clean Raspberry Pi OS image, then install the ReSpeaker HAT driver:
+  ```bash
+  git clone https://github.com/HinTak/seeed-voicecard
+  cd seeed-voicecard
+  git checkout <tag-matching-your-Pi-OS-release>   # required — the wrong tag won't build against your kernel
+  sudo ./install.sh
+  sudo reboot
+  ```
+  After reboot, `arecord -l` should list the seeed card. Then clone this repo.
 - `make install`
 - Edit `config.yaml` to add `base_url`, `api_key`, `model`. Run `make run`.
-- `make service`, then **reboot the Pi**.
-- `journalctl -u pi-card` — check for warnings.
+  First run downloads Piper voices, the Whisper model, and the openWakeWord model — expect ~1–2 min and a working network. Subsequent runs are fast.
+- `make service`.
+- `sudo loginctl enable-linger $USER` — without this, the user unit only starts after login, so a headless Pi never auto-starts.
+- **Reboot the Pi.**
+- `journalctl --user -u pi-card.service` — check for warnings.
 - `make uninstall`.
