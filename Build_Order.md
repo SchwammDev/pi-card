@@ -61,7 +61,7 @@ Pass criteria:
 
 **Done when:** the four adapters exist and the per-adapter bring-up gate above passes. End-to-end behavior moves to the ears-only gate in Phase 5, which needs the CLI wiring.
 
-## Phase 5 — Packaging and end-to-end ✅ ears-only gate passed (fresh-Pi gate deferred)
+## Phase 5 — Packaging and end-to-end ✅ complete
 
 - `cli.py` and `__main__.py` with the documented flags
 - Top-level wiring that constructs adapters from `Config` and hands them to `VoiceAssistant`
@@ -87,7 +87,7 @@ Exercises to cover:
 
 Judge: does the multi-turn rhythm feel natural? Is end-to-end latency tolerable (wake → reply start)? Does the 8 s silence timeout feel right, or should the default change?
 
-### Manual gate — fresh-Pi install
+### Manual gate — fresh-Pi install ✅ passed
 
 The only way to catch missing system deps, wrong paths, or systemd unit mistakes is to install on a Pi you haven't been developing on.
 
@@ -95,8 +95,8 @@ Pass criteria:
 
 - `make install`: no errors, default config written, venv created.
 - `make run` (after filling in `base_url`, `api_key`, `model`): assistant comes up, wake word works, one round-trip succeeds.
-- `make service` + reboot: after boot, with no manual intervention, saying "Computer" gets a response.
-- `journalctl --user -u pi-card.service` clean — anything noisy on a clean install is a packaging bug worth fixing now.
+- `make service` + reboot: after boot, with no manual intervention, saying the configured wake word gets a response.
+- `journalctl _SYSTEMD_USER_UNIT=pi-card.service -b` clean — anything noisy on a clean install is a packaging bug worth fixing now.
 - `make uninstall`: service stopped and removed, no leftover files outside the repo.
 
 ## Out of Scope for v1

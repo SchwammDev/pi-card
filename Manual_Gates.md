@@ -139,20 +139,106 @@ Run through the conversation script listed in `Build_Order.md` (wake word, follo
 
 ## Phase 5 — Fresh-Pi install
 
-- Flash a clean Raspberry Pi OS image, then install the ReSpeaker HAT driver:
-  ```bash
-  git clone https://github.com/HinTak/seeed-voicecard
-  cd seeed-voicecard
-  git checkout <tag-matching-your-Pi-OS-release>   # required — the wrong tag won't build against your kernel
-  sudo ./install.sh
-  sudo reboot
-  ```
-  After reboot, `arecord -l` should list the seeed card. Then clone this repo.
-- `make install`
-- Edit `config.yaml` to add `base_url`, `api_key`, `model`. Run `make run`.
-  First run downloads Piper voices, the Whisper model, and the openWakeWord model — expect ~1–2 min and a working network. Subsequent runs are fast.
-- `make service`.
-- `sudo loginctl enable-linger $USER` — without this, the user unit only starts after login, so a headless Pi never auto-starts.
-- **Reboot the Pi.**
-- `journalctl --user -u pi-card.service` — check for warnings.
-- `make uninstall`.
+Assumes a freshly flashed Raspberry Pi OS image with network access.
+
+### Prerequisites
+
+```bash
+sudo apt update
+sudo apt install -y git libportaudio2
+
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.local/bin/env
+which uv
+```
+
+### ReSpeaker HAT driver
+
+The HinTak fork uses one **branch per kernel** (not tags). Pick the branch matching `uname -r`:
+
+```bash
+git clone https://github.com/HinTak/seeed-voicecard
+cd seeed-voicecard
+git checkout v$(uname -r | cut -d. -f1-2)   # e.g. v6.12 for kernel 6.12.x
+sudo ./install.sh
+sudo reboot
+```
+
+After reboot, `arecord -l` should list `seeed-4mic-voicecard` (or your variant).
+
+### ALSA default device
+
+Pi OS Trixie ships without a usable default sink — sounddevice/portaudio (used by pi-card's adapters) needs one. Test:
+
+```bash
+speaker-test -t sine -f 440 -l 1 -c 1
+```
+
+If it errors with "No such device", find your output card index in `aplay -l` (typically `0` for the headphone jack) and write `~/.asoundrc`:
+
+```
+pcm.!default {
+    type plug
+    slave.pcm "hw:0,0"
+}
+
+ctl.!default {
+    type hw
+    card 0
+}
+```
+
+Re-run `speaker-test` to confirm a tone comes out.
+
+### Hardware roundtrip
+
+Mic and speaker via raw ALSA before involving pi-card. Replace `<seeed-card>` with the index from `arecord -l`:
+
+```bash
+arecord -D plughw:<seeed-card>,0 -f S16_LE -r 16000 -c 2 -d 5 /tmp/mic_test.wav
+aplay /tmp/mic_test.wav
+```
+
+Speak during the 5 s window. You should hear yourself.
+
+### pi-card install and first run
+
+```bash
+cd ~
+git clone <pi-card repo URL>
+cd pi-card
+make install
+nano ~/.config/pi-card/config.yaml   # set base_url, api_key, model
+make run
+```
+
+First run downloads Piper voices, the Whisper model, and the openWakeWord models — expect ~1–2 min on a working network. Subsequent runs are fast. Try the wake word; expect a reply.
+
+### Service install and headless boot
+
+```bash
+make service
+sudo loginctl enable-linger $USER   # without this the user unit only starts after login
+sudo reboot
+```
+
+After reboot, log back in. The service should be running unattended (LED + audio cue, wake word works). Check the journal:
+
+```bash
+systemctl --user status pi-card.service
+journalctl _SYSTEMD_USER_UNIT=pi-card.service -b --no-pager
+```
+
+Note: `journalctl --user -u …` returns nothing on default Pi OS — journald doesn't keep a per-user journal. The `_SYSTEMD_USER_UNIT=` field-filter reads user-unit entries from the system journal, which does work. Persistent journals across reboots are off by default; check within the same boot.
+
+Anything noisy in the journal is a packaging bug worth fixing now.
+
+### Uninstall
+
+```bash
+systemctl --user stop pi-card.service   # no sudo — sudo strips the user bus env
+make uninstall
+
+ls ~/.config/pi-card ~/.local/state/pi-card ~/.local/share/pi-card 2>&1   # all "No such file"
+systemctl --user status pi-card.service 2>&1 | head -3                    # "not-found"
+```
