@@ -17,7 +17,7 @@ LOG_BACKUP_COUNT = 5
 
 TRANSCRIPTS_LOGGER_NAME = "pi_card.transcripts"
 
-EN_VOICE = "en_GB-alan-medium"
+EN_VOICE = "en_GB-jenny_dioco-medium"
 FR_VOICE = "fr_FR-siwis-medium"
 
 WHISPER_INITIAL_PROMPTS = {

@@ -16,7 +16,7 @@ from tests.fakes.audio_output import FakeAudioOutput
 
 OUT = Path("playground/tts_samples"); OUT.mkdir(parents=True, exist_ok=True)
 SENTENCES = {
-    "en_GB-alan-medium": [
+    "en_GB-jenny_dioco-medium": [
         "Hello, what's the weather today?",
         "Set a timer for fifteen minutes.",
         "The meeting is on April twenty-third at three p.m.",
@@ -88,7 +88,7 @@ Save as `playground/speaker_check.py`:
 from pi_card.adapters.usb_speaker import USBSpeakerOutput
 from pi_card.pipeline.tts import PiperTTS
 
-PiperTTS(voice="en_GB-alan-medium").speak(
+PiperTTS(voice="en_GB-jenny_dioco-medium").speak(
     "If you can hear this clearly, the speaker adapter works.",
     USBSpeakerOutput(),
 )

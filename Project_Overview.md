@@ -14,7 +14,7 @@ The active language can be switched mid-session via voice command. See `Language
 - **Language:** Python
 - **Wake word detection:** openWakeWord, default wake word "Computer" (offline, swappable to other openWakeWord models via `wake_word` in config or `--wake-word`; Porcupine remains a fallback if accuracy needs arise)
 - **Speech-to-text:** Faster-Whisper, `base` model with `int8` compute type (offline, multilingual — user specifies language)
-- **Text-to-speech:** Piper, voices `en_GB-alan-medium` (EN) and `fr_FR-siwis-medium` (FR) (offline, fast on Pi 4; swappable to cloud TTS later)
+- **Text-to-speech:** Piper, voices `en_GB-jenny_dioco-medium` (EN) and `fr_FR-siwis-medium` (FR) (offline, fast on Pi 4; swappable to cloud TTS later)
 - **AI agent:** OpenAI-compatible API (user-configurable provider — see "AI Agent" below)
 
 ## Hardware & Audio
