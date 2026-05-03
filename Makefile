@@ -40,7 +40,7 @@ uninstall:
 	-rm -rf $(CONFIG_DIR)
 	-rm -rf $(STATE_DIR)
 	-rm -rf $(SHARE_DIR)
-	@echo "pi-card uninstalled (service, config, logs, and downloaded voices removed)."
+	@echo "pi-card uninstalled (service, config, logs, and downloaded models removed)."
 
 clean:
 	rm -rf .venv .pytest_cache

@@ -127,6 +127,32 @@ print(f"{time.perf_counter() - t0:.2f}s  →  {reply}")
 
 Run each with `uv run python playground/<name>.py`. Method names above are placeholders — adjust to whatever you actually built.
 
+## Phase 5 — "Computer" wake-word sanity check
+
+Before re-running the full ears-only gate, confirm the swapped wake-word model behaves. The fwartner v2 model has a known elevated false-positive rate (~5 FP/hr on their benchmark) — judge whether it's tolerable in your room.
+
+Save as `playground/wake_word_check.py`:
+
+```python
+from pi_card.adapters.respeaker_input import ReSpeakerInput
+from pi_card.pipeline.wake_word import WakeWordDetector, load_openwakeword_engine
+
+mic = ReSpeakerInput()
+detector = WakeWordDetector(engine=load_openwakeword_engine())
+print("Say 'Computer' (Ctrl-C to quit)...")
+while True:
+    detector.wait_for_wake_word(mic)
+    print("triggered")
+```
+
+Pass criteria:
+
+- Says "Computer" → triggers within ~1 s, every time, across ~10 attempts.
+- Speaking unrelated sentences for ~5 minutes produces few or no triggers. A handful is expected with this model; constant firing is not.
+- First run: model file appears at `~/.local/share/pi-card/wake-words/computer.tflite` (~200 kB).
+
+If false-positives are intolerable: revisit the source choice in `Build_Order.md` Phase 5 (Porcupine fallback, or train a custom model).
+
 ## Phase 5 — Full conversation, ears only
 
 ```bash
@@ -135,7 +161,7 @@ uv run python -m pi_card --log-level INFO --debug-transcripts
 tail -f ~/.local/state/pi-card/logs/transcripts.log
 ```
 
-Run through the conversation script listed in `Build_Order.md` (wake word, follow-up, silence timeout, goodbye, language switch, network-unplugged error).
+Run through the conversation script listed in `Build_Order.md` (wake word, follow-up, silence timeout, goodbye, language switch, network-unplugged error). Originally passed against the `hey_jarvis` stand-in — re-run now that the wake word is "Computer".
 
 ## Phase 5 — Fresh-Pi install
 

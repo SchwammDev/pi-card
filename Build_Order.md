@@ -68,11 +68,13 @@ Pass criteria:
 - `Makefile` targets: `install`, `run`, `service`, `uninstall`, `clean`
 - systemd unit for auto-start
 - `config.yaml.example` with all defaults documented
-- Custom "Computer" wake-word model — openWakeWord doesn't ship one. Train or source a `computer.tflite`, drop it into the runtime model dir on first use (mirror `load_piper_voice`'s pattern), and pass `model_name="computer"` from `cli.py` to `WakeWordDetector`. Currently the default `hey_jarvis` is a stand-in — the spec in `Project_Overview.md` calls for "Computer".
+- "Computer" wake-word model: fwartner `computer_v2.tflite` (MIT-licensed), pinned commit, downloaded on first use into `~/.local/share/pi-card/wake-words/` mirroring `load_piper_voice`. `DEFAULT_WAKE_WORD = "computer"`.
 
 **Done when:** `make install && make service` brings the assistant up on a fresh Pi *and* the ears-only gate below passes.
 
-### Manual gate — full conversation, ears only ✅ passed
+### Manual gate — full conversation, ears only ⚠️ re-run pending
+
+Originally passed against the `hey_jarvis` stand-in. The wake word is now "Computer" — re-run before this gate is honestly green.
 
 With all four adapters wired in through the CLI, run the assistant and have a real conversation. You're judging *felt* quality, which acceptance tests cannot.
 
