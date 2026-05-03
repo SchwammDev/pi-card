@@ -22,7 +22,7 @@ class Config:
     silence_timeout: float = 5.0
     max_stt_retries: int = 2
     wake_word: str = DEFAULT_WAKE_WORD
-    pause_tolerance: float = 1.5
+    min_silence_duration_ms: int = 1500
 
     @classmethod
     def load(cls, path: str | Path) -> "Config":
@@ -63,5 +63,7 @@ class Config:
             silence_timeout=float(raw.get("silence_timeout", cls.silence_timeout)),
             max_stt_retries=int(raw.get("max_stt_retries", cls.max_stt_retries)),
             wake_word=wake_word,
-            pause_tolerance=float(raw.get("pause_tolerance", cls.pause_tolerance)),
+            min_silence_duration_ms=int(
+                raw.get("min_silence_duration_ms", cls.min_silence_duration_ms)
+            ),
         )

@@ -42,7 +42,7 @@ class Conversation:
         initial_language: str,
         silence_timeout_ms: int,
         max_stt_retries: int,
-        pause_tolerance_ms: int,
+        min_silence_duration_ms: int,
     ):
         self._audio_in = audio_in
         self._audio_out = audio_out
@@ -54,7 +54,7 @@ class Conversation:
         self._language = initial_language
         self._silence_timeout_ms = silence_timeout_ms
         self._max_stt_retries = max_stt_retries
-        self._pause_tolerance_ms = pause_tolerance_ms
+        self._min_silence_duration_ms = min_silence_duration_ms
         self._history: list[Message] = [Message(role="system", content=SYSTEM_PROMPT)]
 
     def run(self) -> str:
@@ -105,7 +105,7 @@ class Conversation:
                 self._audio_in,
                 self._speech_detector,
                 silence_ms_no_speech=self._silence_timeout_ms,
-                silence_ms_after_speech=self._pause_tolerance_ms,
+                silence_ms_after_speech=self._min_silence_duration_ms,
             )
             if isinstance(result, SilenceTimeout):
                 return None

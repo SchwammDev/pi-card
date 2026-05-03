@@ -130,16 +130,16 @@ def test_config_rejects_unknown_wake_word(tmp_path):
     assert "hey_jarvis" in str(excinfo.value)
 
 
-def test_config_default_pause_tolerance_is_long_enough_for_natural_pauses(tmp_path):
+def test_config_default_min_silence_duration_is_long_enough_for_natural_pauses(tmp_path):
     config = _load_with_overrides(tmp_path)
 
-    assert config.pause_tolerance >= 1.2
+    assert config.min_silence_duration_ms >= 1200
 
 
-def test_config_overrides_pause_tolerance(tmp_path):
-    config = _load_with_overrides(tmp_path, pause_tolerance=2.0)
+def test_config_overrides_min_silence_duration(tmp_path):
+    config = _load_with_overrides(tmp_path, min_silence_duration_ms=2000)
 
-    assert config.pause_tolerance == 2.0
+    assert config.min_silence_duration_ms == 2000
 
 
 def test_config_fails_fast_when_file_does_not_exist(tmp_path):

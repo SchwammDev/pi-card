@@ -16,7 +16,7 @@ SILENCE_FRAME = b"\x00" * FRAME_BYTES
 def test_natural_pause_in_speech_does_not_end_the_user_turn_early(scenario):
     user_speaks_with_a_natural_one_second_pause(scenario)
 
-    run_one_turn(scenario, pause_tolerance_ms=1500)
+    run_one_turn(scenario, min_silence_duration_ms=1500)
 
     assert_stt_received_at_least_frames(scenario, frames=30)
 
@@ -55,7 +55,7 @@ def user_speaks_with_a_natural_one_second_pause(scenario: Scenario) -> None:
     scenario.speech_detector.queue(*[c == "V" for c in pattern])
 
 
-def run_one_turn(scenario: Scenario, *, pause_tolerance_ms: int) -> None:
+def run_one_turn(scenario: Scenario, *, min_silence_duration_ms: int) -> None:
     Conversation(
         audio_in=scenario.audio_in,
         audio_out=scenario.audio_out,
@@ -70,7 +70,7 @@ def run_one_turn(scenario: Scenario, *, pause_tolerance_ms: int) -> None:
         initial_language="en",
         silence_timeout_ms=500,
         max_stt_retries=2,
-        pause_tolerance_ms=pause_tolerance_ms,
+        min_silence_duration_ms=min_silence_duration_ms,
     ).run()
 
 

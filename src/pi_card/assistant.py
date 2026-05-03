@@ -31,7 +31,7 @@ class VoiceAssistant:
         language: str = "en",
         silence_timeout: float = 5.0,
         max_stt_retries: int = 2,
-        pause_tolerance: float = 1.5,
+        min_silence_duration_ms: int = 1500,
         ready_pulse_s: float = DEFAULT_READY_PULSE_S,
     ):
         self.audio_in = audio_in
@@ -45,7 +45,7 @@ class VoiceAssistant:
         self.language = language
         self.silence_timeout = silence_timeout
         self.max_stt_retries = max_stt_retries
-        self.pause_tolerance = pause_tolerance
+        self.min_silence_duration_ms = min_silence_duration_ms
         self.ready_pulse_s = ready_pulse_s
 
     def run(self) -> None:
@@ -75,5 +75,5 @@ class VoiceAssistant:
             initial_language=self.language,
             silence_timeout_ms=int(self.silence_timeout * 1000),
             max_stt_retries=self.max_stt_retries,
-            pause_tolerance_ms=int(self.pause_tolerance * 1000),
+            min_silence_duration_ms=self.min_silence_duration_ms,
         )
