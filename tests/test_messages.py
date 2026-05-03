@@ -63,7 +63,13 @@ class TestDetectLanguageSwitch:
 
     @pytest.mark.parametrize(
         "phrase",
-        ["passe en anglais", "passer en anglais", "parle anglais", "parler anglais"],
+        [
+            "passe en anglais",
+            "passer en anglais",
+            "pass en anglais",
+            "parle anglais",
+            "parler anglais",
+        ],
     )
     def test_french_switches_to_english(self, phrase):
         assert detect_language_switch(phrase, current_language="fr") == "en"

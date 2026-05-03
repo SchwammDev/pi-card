@@ -33,6 +33,7 @@ _MESSAGES: dict[str, _LanguageMessages] = {
             "en": (
                 "passe en anglais",
                 "passer en anglais",
+                "pass en anglais",
                 "parle anglais",
                 "parler anglais",
             ),
