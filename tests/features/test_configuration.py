@@ -130,6 +130,30 @@ def test_config_rejects_unknown_wake_word(tmp_path):
     assert "hey_jarvis" in str(excinfo.value)
 
 
+def test_config_default_pause_tolerance_is_long_enough_for_natural_pauses(tmp_path):
+    config = _load_with_overrides(tmp_path)
+
+    assert config.pause_tolerance >= 1.2
+
+
+def test_config_overrides_pause_tolerance(tmp_path):
+    config = _load_with_overrides(tmp_path, pause_tolerance=2.0)
+
+    assert config.pause_tolerance == 2.0
+
+
+def test_config_default_speech_rms_threshold_matches_capture_default(tmp_path):
+    config = _load_with_overrides(tmp_path)
+
+    assert config.speech_rms_threshold == 1500
+
+
+def test_config_overrides_speech_rms_threshold(tmp_path):
+    config = _load_with_overrides(tmp_path, speech_rms_threshold=800)
+
+    assert config.speech_rms_threshold == 800
+
+
 def test_config_fails_fast_when_file_does_not_exist(tmp_path):
     with pytest.raises(ConfigError) as excinfo:
         Config.load(tmp_path / "does-not-exist.yaml")

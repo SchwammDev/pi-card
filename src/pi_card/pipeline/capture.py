@@ -5,13 +5,12 @@ import numpy as np
 
 from pi_card.hardware.audio_input import AudioInput, FRAME_DURATION_MS
 
-DEFAULT_SILENCE_MS_AFTER_SPEECH = 800
+DEFAULT_SILENCE_MS_AFTER_SPEECH = 1500
 DEFAULT_SILENCE_MS_NO_SPEECH = 5_000
 DEFAULT_MAX_MS = 20_000
 DEFAULT_START_SPEECH_FRAMES = 2
 DEFAULT_PREROLL_FRAMES = 24
-
-_SPEECH_RMS_THRESHOLD = 1500
+DEFAULT_SPEECH_RMS_THRESHOLD = 1500
 
 
 @dataclass(frozen=True)
@@ -32,6 +31,7 @@ def capture_utterance(
     max_ms: int = DEFAULT_MAX_MS,
     start_speech_frames: int = DEFAULT_START_SPEECH_FRAMES,
     preroll_frames: int = DEFAULT_PREROLL_FRAMES,
+    speech_rms_threshold: int = DEFAULT_SPEECH_RMS_THRESHOLD,
 ) -> Utterance | SilenceTimeout:
     """Read frames from `audio_in` until one of three conditions fires:
 
@@ -54,7 +54,7 @@ def capture_utterance(
 
     while True:
         frame = audio_in.read_frame()
-        is_speech = _is_speech(frame)
+        is_speech = _is_speech(frame, speech_rms_threshold)
 
         if not captured:
             preroll.append(frame)
@@ -81,9 +81,9 @@ def _ms_to_frames(ms: int) -> int:
     return max(1, ms // FRAME_DURATION_MS)
 
 
-def _is_speech(frame: bytes) -> bool:
+def _is_speech(frame: bytes, threshold: int) -> bool:
     samples = np.frombuffer(frame, dtype=np.int16).astype(np.float32)
     if samples.size == 0:
         return False
     rms = float(np.sqrt(np.mean(samples**2)))
-    return rms >= _SPEECH_RMS_THRESHOLD
+    return rms >= threshold

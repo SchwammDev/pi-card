@@ -40,6 +40,8 @@ class Conversation:
         initial_language: str,
         silence_timeout_ms: int,
         max_stt_retries: int,
+        pause_tolerance_ms: int,
+        speech_rms_threshold: int,
     ):
         self._audio_in = audio_in
         self._audio_out = audio_out
@@ -50,6 +52,8 @@ class Conversation:
         self._language = initial_language
         self._silence_timeout_ms = silence_timeout_ms
         self._max_stt_retries = max_stt_retries
+        self._pause_tolerance_ms = pause_tolerance_ms
+        self._speech_rms_threshold = speech_rms_threshold
         self._history: list[Message] = [Message(role="system", content=SYSTEM_PROMPT)]
 
     def run(self) -> str:
@@ -99,6 +103,8 @@ class Conversation:
             result = capture_utterance(
                 self._audio_in,
                 silence_ms_no_speech=self._silence_timeout_ms,
+                silence_ms_after_speech=self._pause_tolerance_ms,
+                speech_rms_threshold=self._speech_rms_threshold,
             )
             if isinstance(result, SilenceTimeout):
                 return None

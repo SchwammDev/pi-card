@@ -8,8 +8,16 @@ from pi_card.hardware.audio_input import (
 from pi_card.pipeline.capture import SilenceTimeout, Utterance, capture_utterance
 from tests.fakes.audio_input import FakeAudioInput
 
-SILENCE_FRAME = b"\x00" * FRAME_BYTES
-SPEECH_FRAME = b"\x00\x20" * (FRAME_BYTES // 2)  # amplitude 8192 samples — well above the noise-floor threshold
+def _frame_at_amplitude(amplitude: int) -> bytes:
+    return amplitude.to_bytes(2, "little", signed=True) * (FRAME_BYTES // 2)
+
+
+AMPLITUDE_BELOW_DEFAULT_SPEECH_FLOOR = 1000
+AMPLITUDE_WELL_ABOVE_DEFAULT_SPEECH_FLOOR = 8192
+
+SILENCE_FRAME = _frame_at_amplitude(0)
+SPEECH_FRAME = _frame_at_amplitude(AMPLITUDE_WELL_ABOVE_DEFAULT_SPEECH_FLOOR)
+QUIET_SPEECH_FRAME = _frame_at_amplitude(AMPLITUDE_BELOW_DEFAULT_SPEECH_FLOOR)
 
 _FRAME_SYMBOLS = {"S": SILENCE_FRAME, "V": SPEECH_FRAME}
 
@@ -100,6 +108,24 @@ def test_truncates_at_max_ms_when_speech_continues():
 
     assert isinstance(result, Utterance)
     assert len(result.pcm) == 2 * FRAME_BYTES
+
+
+def test_natural_one_second_pause_inside_speech_does_not_end_the_turn():
+    audio = _audio("VV" + "S" * 13 + "VV" + "S" * 20)
+
+    result = capture_utterance(audio)
+
+    assert isinstance(result, Utterance)
+    assert result.pcm.count(SPEECH_FRAME) == 4
+
+
+def test_quieter_speech_is_captured_when_the_speech_threshold_is_lowered():
+    audio = FakeAudioInput(frames=[QUIET_SPEECH_FRAME] * 4 + [SILENCE_FRAME] * 3)
+
+    result = capture_utterance(audio, speech_rms_threshold=500, silence_ms_after_speech=2 * FRAME_DURATION_MS)
+
+    assert isinstance(result, Utterance)
+    assert QUIET_SPEECH_FRAME in result.pcm
 
 
 def test_propagates_audio_input_exhausted_if_stream_runs_out_mid_capture():

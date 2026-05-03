@@ -169,6 +169,8 @@ def build_assistant(config: Config) -> VoiceAssistant:
         language=config.language,
         silence_timeout=config.silence_timeout,
         max_stt_retries=config.max_stt_retries,
+        pause_tolerance=config.pause_tolerance,
+        speech_rms_threshold=config.speech_rms_threshold,
     )
 
 

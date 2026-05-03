@@ -10,7 +10,11 @@ agent:
   model: gpt-4o-mini
 
 # Optional overrides (defaults shown):
-# language: en            # starting language; "en" or "fr". Switchable mid-session.
-# silence_timeout: 5.0    # seconds of silence before returning to wake-word mode.
-# max_stt_retries: 2      # low-confidence STT retries before giving up.
-# wake_word: computer     # one of: computer, alexa, hey_jarvis, hey_mycroft, hey_rhasspy.
+# language: en               # starting language; "en" or "fr". Switchable mid-session.
+# silence_timeout: 5.0       # seconds of silence before returning to wake-word mode.
+# pause_tolerance: 1.5       # seconds a mid-utterance pause may last before the turn ends.
+#                            # Increase if the device cuts you off during natural pauses.
+# speech_rms_threshold: 1500 # mic-amplitude floor that counts as speech (16-bit int RMS).
+#                            # Lower if your voice or mic gain leaves quiet speech undetected.
+# max_stt_retries: 2         # low-confidence STT retries before giving up.
+# wake_word: computer        # one of: computer, alexa, hey_jarvis, hey_mycroft, hey_rhasspy.
