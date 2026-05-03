@@ -80,6 +80,7 @@ def assistant(
         language="en",
         silence_timeout=0.5,
         max_stt_retries=2,
+        ready_pulse_s=0,
     )
 
 

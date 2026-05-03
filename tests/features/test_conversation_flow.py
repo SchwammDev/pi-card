@@ -14,6 +14,7 @@ from tests.dsl.assertions import (
     assert_assistant_did_not_speak_in,
     assert_assistant_spoke,
     assert_conversation_started_fresh_at_call,
+    assert_first_led_signal_was_ready_cue,
     assert_history_accumulated_within_conversation,
     assert_input_was_drained_at_least,
     assert_input_was_drained_per_wake_word_session,
@@ -205,6 +206,16 @@ def test_input_is_drained_before_each_capture_turn_within_a_conversation(world):
     _run_conversation_with_two_turns_then_goodbye(world)
 
     assert_input_was_drained_at_least(world, times=4)
+
+
+def test_signals_readiness_before_listening_for_first_wake_word(world):
+    trigger_wake_word(world)
+    user_says(world, "Hello", language="en")
+    assistant_will_reply(world, "Hi.")
+
+    run_until_exhausted(world)
+
+    assert_first_led_signal_was_ready_cue(world)
 
 
 def test_wake_word_engine_state_is_reset_between_conversations(world):

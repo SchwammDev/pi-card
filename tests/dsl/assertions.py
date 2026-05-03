@@ -111,6 +111,17 @@ def assert_input_was_drained_at_least(world: World, *, times: int) -> None:
         )
 
 
+def assert_first_led_signal_was_ready_cue(world: World) -> None:
+    if not world.leds.states or world.leds.states[0] != LEDState.THINKING:
+        raise AssertionError(
+            f"expected first LED state to be the ready cue (THINKING); got {world.leds.states!r}"
+        )
+    if len(world.leds.states) < 2 or world.leds.states[1] != LEDState.OFF:
+        raise AssertionError(
+            f"expected ready cue to clear to OFF immediately after; got {world.leds.states!r}"
+        )
+
+
 def assert_wake_word_engine_was_reset_per_session(world: World, *, sessions: int) -> None:
     actual = world.wake_word_engine.reset_call_count
     if actual < sessions:

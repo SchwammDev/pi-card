@@ -19,7 +19,7 @@ def trigger_wake_word(world: World) -> None:
 def user_says(world: World, text: str, *, language: str) -> None:
     """Queue speech-shaped audio + trailing silence, and queue the STT transcript for the language."""
     world.audio_in.queue(_SPEECH_FRAME * 2)
-    world.audio_in.queue(_SILENCE_FRAME * 8)
+    world.audio_in.queue(_SILENCE_FRAME * 12)
     world.whisper.queue_transcript(language, text)
 
 
