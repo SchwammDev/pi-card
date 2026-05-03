@@ -34,7 +34,7 @@ The active language can be switched mid-session via voice command. See `Language
 ## Runtime Behavior
 
 - **Conversation mode** — Multi-turn. After each response, the mic stays open for follow-ups. Conversation ends on silence timeout (default: 8s, configurable) or explicit exit ("goodbye", "that's all"), returning to wake-word mode.
-- **Concurrency model** — v1: sequential pipeline (listen → transcribe → query → speak). v2 (deferred): stream AI response into TTS in sentence-sized chunks for lower perceived latency.
+- **Concurrency model** — v1: sequential pipeline (listen → transcribe → query → speak). v2 (next priority): stream AI response into TTS in sentence-sized chunks. Phase 5 ears-only gate confirmed the sequential pipeline feels noticeably sluggish — full LLM completion before any speech starts dominates perceived latency. Streaming is no longer optional.
 - **Error handling & feedback:**
   - **Network / API failure** — Play spoken error cue ("I can't reach my brain right now"), flash LED red, return to wake-word mode. No silent retries.
   - **Low-confidence STT** — Ask "Sorry, could you repeat that?" and re-listen. Max retries configurable (default: 2), then audio error cue + red LED, return to wake-word mode.

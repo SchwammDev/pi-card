@@ -100,6 +100,6 @@ Pass criteria:
 
 ## Out of Scope for v1
 
-- Streaming TTS (deferred to v2; see `Project_Overview.md`)
+- Streaming TTS — out of scope for v1 but **promoted to top v2 priority** after the Phase 5 gate exposed the sluggishness of the fully-sequential pipeline.
 - Cross-conversation memory (interface seam exists; no implementation)
 - Auto language detection
