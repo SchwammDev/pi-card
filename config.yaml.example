@@ -13,3 +13,4 @@ agent:
 # language: en            # starting language; "en" or "fr". Switchable mid-session.
 # silence_timeout: 5.0    # seconds of silence before returning to wake-word mode.
 # max_stt_retries: 2      # low-confidence STT retries before giving up.
+# wake_word: computer     # one of: computer, alexa, hey_jarvis, hey_mycroft, hey_rhasspy.

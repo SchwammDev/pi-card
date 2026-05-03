@@ -22,6 +22,15 @@ WAKE_WORD_MODEL_URLS = {
     ),
 }
 
+STOCK_OPENWAKEWORD_MODELS = frozenset({
+    "alexa",
+    "hey_jarvis",
+    "hey_mycroft",
+    "hey_rhasspy",
+})
+
+SUPPORTED_WAKE_WORDS = frozenset(WAKE_WORD_MODEL_URLS) | STOCK_OPENWAKEWORD_MODELS
+
 
 class WakeWordDetector:
     """Single-shot wake-word detector. Consumes an AudioInput until the
@@ -58,9 +67,9 @@ def load_openwakeword_engine(
     import numpy as np
 
     download_models()
-    model_path = _ensure_wake_word_model(model_name, model_dir)
+    model_spec = _resolve_model_spec(model_name, model_dir)
 
-    model = Model(wakeword_models=[str(model_path)])
+    model = Model(wakeword_models=[model_spec])
 
     class _Adapter:
         def predict(self, frame: bytes) -> dict[str, float]:
@@ -73,12 +82,18 @@ def load_openwakeword_engine(
     return _Adapter()
 
 
-def _ensure_wake_word_model(model_name: str, model_dir: Path) -> Path:
-    if model_name not in WAKE_WORD_MODEL_URLS:
-        raise ValueError(
-            f"No download URL configured for wake-word model {model_name!r}. "
-            f"Known models: {sorted(WAKE_WORD_MODEL_URLS)}"
-        )
+def _resolve_model_spec(model_name: str, model_dir: Path) -> str:
+    if model_name in STOCK_OPENWAKEWORD_MODELS:
+        return model_name
+    if model_name in WAKE_WORD_MODEL_URLS:
+        return str(_ensure_downloaded_model(model_name, model_dir))
+    raise ValueError(
+        f"Unsupported wake word {model_name!r}. "
+        f"Supported: {sorted(SUPPORTED_WAKE_WORDS)}"
+    )
+
+
+def _ensure_downloaded_model(model_name: str, model_dir: Path) -> Path:
     model_dir.mkdir(parents=True, exist_ok=True)
     model_path = model_dir / f"{model_name}.tflite"
     if not model_path.exists():

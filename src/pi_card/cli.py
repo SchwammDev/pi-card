@@ -7,6 +7,7 @@ from pathlib import Path
 
 from pi_card.assistant import VoiceAssistant
 from pi_card.config import Config
+from pi_card.pipeline.wake_word import SUPPORTED_WAKE_WORDS
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "pi-card" / "config.yaml"
 DEFAULT_LOG_DIR = Path.home() / ".local" / "state" / "pi-card" / "logs"
@@ -43,6 +44,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Override the starting language from config.",
     )
     parser.add_argument(
+        "--wake-word",
+        choices=sorted(SUPPORTED_WAKE_WORDS),
+        default=None,
+        help="Override the wake word from config.",
+    )
+    parser.add_argument(
         "--log-level",
         default="WARNING",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -56,10 +63,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def load_config_with_overrides(path: Path, *, language: str | None) -> Config:
+def load_config_with_overrides(
+    path: Path, *, language: str | None, wake_word: str | None = None
+) -> Config:
     config = Config.load(path)
     if language is not None:
         config = replace(config, language=language)
+    if wake_word is not None:
+        config = replace(config, wake_word=wake_word)
     return config
 
 
@@ -146,7 +157,10 @@ def build_assistant(config: Config) -> VoiceAssistant:
         audio_out=USBSpeakerOutput(),
         leds=ReSpeakerLEDs(),
         agent=OpenAIAgent(client=client, model=config.model),
-        wake_word_detector=WakeWordDetector(engine=load_openwakeword_engine()),
+        wake_word_detector=WakeWordDetector(
+            engine=load_openwakeword_engine(model_name=config.wake_word),
+            model_name=config.wake_word,
+        ),
         stt=WhisperSTT(model=load_faster_whisper_model(), initial_prompts=WHISPER_INITIAL_PROMPTS),
         tts_by_language={
             "en": PiperTTS(voice=load_piper_voice(EN_VOICE)),
@@ -161,7 +175,9 @@ def build_assistant(config: Config) -> VoiceAssistant:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     configure_logging(level=args.log_level, debug_transcripts=args.debug_transcripts)
-    config = load_config_with_overrides(args.config, language=args.language)
+    config = load_config_with_overrides(
+        args.config, language=args.language, wake_word=args.wake_word
+    )
 
     logger = logging.getLogger(__name__)
     logger.info("pi-card starting (language=%s, model=%s)", config.language, config.model)

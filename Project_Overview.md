@@ -12,7 +12,7 @@ The active language can be switched mid-session via voice command. See `Language
 ## Tech Stack
 
 - **Language:** Python
-- **Wake word detection:** openWakeWord, wake word "Computer" (offline, swappable to Porcupine if accuracy needs arise)
+- **Wake word detection:** openWakeWord, default wake word "Computer" (offline, swappable to other openWakeWord models via `wake_word` in config or `--wake-word`; Porcupine remains a fallback if accuracy needs arise)
 - **Speech-to-text:** Faster-Whisper, `base` model with `int8` compute type (offline, multilingual — user specifies language)
 - **Text-to-speech:** Piper, voices `en_GB-alan-medium` (EN) and `fr_FR-siwis-medium` (FR) (offline, fast on Pi 4; swappable to cloud TTS later)
 - **AI agent:** OpenAI-compatible API (user-configurable provider — see "AI Agent" below)
@@ -90,8 +90,8 @@ pi-card/
 ## User-Facing Setup
 
 - **Configuration** — Convention over Configuration. Single `config.yaml` with sensible defaults baked into code; file only needs overrides. Precedence: CLI args > config file > defaults.
-  - **Defaults** — language: `en`, silence timeout: 8s, max STT retries: 2.
+  - **Defaults** — language: `en`, silence timeout: 8s, max STT retries: 2, wake word: `computer`.
   - **Required (no default)** — `base_url`, `api_key`, `model` for the AI agent. Fail fast with clear message if unset.
-  - **CLI overrides** — `--language`, `--log-level`, `--config` (alternate config path), `--debug-transcripts`. Only flags useful for dev/debugging.
+  - **CLI overrides** — `--language`, `--wake-word`, `--log-level`, `--config` (alternate config path), `--debug-transcripts`.
 - **Installation & deployment** — Makefile. Targets: `install` (venv + deps + default config), `run`, `service` (systemd auto-start), `uninstall`, `clean`. Assumes ReSpeaker HAT is already configured.
 

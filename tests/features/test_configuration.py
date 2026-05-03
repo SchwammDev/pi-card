@@ -11,6 +11,20 @@ def _write_config(tmp_path, body: str):
     return path
 
 
+def _load_with_overrides(tmp_path, **overrides) -> Config:
+    lines = [
+        "agent:",
+        "  base_url: https://api.example.com/v1",
+        "  api_key: secret",
+        "  model: gpt-4o-mini",
+    ]
+    for key, value in overrides.items():
+        lines.append(f"{key}: {value}")
+    path = tmp_path / "config.yaml"
+    path.write_text("\n".join(lines) + "\n")
+    return Config.load(path)
+
+
 def test_config_loads_all_required_fields(tmp_path):
     path = _write_config(
         tmp_path,
@@ -93,6 +107,27 @@ def test_config_fails_fast_when_agent_section_is_missing(tmp_path):
         Config.load(path)
 
     assert "agent" in str(excinfo.value)
+
+
+def test_config_default_wake_word_is_computer(tmp_path):
+    config = _load_with_overrides(tmp_path)
+
+    assert config.wake_word == "computer"
+
+
+def test_config_accepts_documented_wake_word_override(tmp_path):
+    config = _load_with_overrides(tmp_path, wake_word="hey_jarvis")
+
+    assert config.wake_word == "hey_jarvis"
+
+
+def test_config_rejects_unknown_wake_word(tmp_path):
+    with pytest.raises(ConfigError) as excinfo:
+        _load_with_overrides(tmp_path, wake_word="not_a_real_wake_word")
+
+    assert "not_a_real_wake_word" in str(excinfo.value)
+    assert "computer" in str(excinfo.value)
+    assert "hey_jarvis" in str(excinfo.value)
 
 
 def test_config_fails_fast_when_file_does_not_exist(tmp_path):

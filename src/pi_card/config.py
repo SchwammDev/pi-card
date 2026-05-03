@@ -3,6 +3,8 @@ from pathlib import Path
 
 import yaml
 
+from pi_card.pipeline.wake_word import DEFAULT_WAKE_WORD, SUPPORTED_WAKE_WORDS
+
 
 class ConfigError(ValueError):
     """Raised when the config file is missing, malformed, or incomplete."""
@@ -19,6 +21,7 @@ class Config:
     language: str = "en"
     silence_timeout: float = 5.0
     max_stt_retries: int = 2
+    wake_word: str = DEFAULT_WAKE_WORD
 
     @classmethod
     def load(cls, path: str | Path) -> "Config":
@@ -43,6 +46,14 @@ class Config:
                 f"Config file {path} is missing required agent field(s): {fields}"
             )
 
+        wake_word = raw.get("wake_word", cls.wake_word)
+        if wake_word not in SUPPORTED_WAKE_WORDS:
+            supported = ", ".join(sorted(SUPPORTED_WAKE_WORDS))
+            raise ConfigError(
+                f"Config file {path} sets wake_word={wake_word!r}; "
+                f"supported values: {supported}"
+            )
+
         return cls(
             base_url=agent["base_url"],
             api_key=agent["api_key"],
@@ -50,4 +61,5 @@ class Config:
             language=raw.get("language", cls.language),
             silence_timeout=float(raw.get("silence_timeout", cls.silence_timeout)),
             max_stt_retries=int(raw.get("max_stt_retries", cls.max_stt_retries)),
+            wake_word=wake_word,
         )

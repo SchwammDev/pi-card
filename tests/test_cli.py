@@ -56,6 +56,7 @@ def test_parse_args_uses_documented_defaults():
     args = cli.parse_args([])
     assert args.config == cli.DEFAULT_CONFIG_PATH
     assert args.language is None
+    assert args.wake_word is None
     assert args.log_level == "WARNING"
     assert args.debug_transcripts is False
 
@@ -68,6 +69,8 @@ def test_parse_args_reads_every_documented_flag(tmp_path):
             str(alt),
             "--language",
             "fr",
+            "--wake-word",
+            "hey_jarvis",
             "--log-level",
             "DEBUG",
             "--debug-transcripts",
@@ -75,6 +78,7 @@ def test_parse_args_reads_every_documented_flag(tmp_path):
     )
     assert args.config == alt
     assert args.language == "fr"
+    assert args.wake_word == "hey_jarvis"
     assert args.log_level == "DEBUG"
     assert args.debug_transcripts is True
 
@@ -86,6 +90,17 @@ def test_language_cli_flag_overrides_config(tmp_path):
     )
     assert base.language == "en"
     assert overridden.language == "fr"
+
+
+def test_wake_word_cli_flag_overrides_config(tmp_path):
+    base = cli.load_config_with_overrides(
+        _valid_config(tmp_path), language=None, wake_word=None
+    )
+    overridden = cli.load_config_with_overrides(
+        _valid_config(tmp_path), language=None, wake_word="hey_jarvis"
+    )
+    assert base.wake_word == "computer"
+    assert overridden.wake_word == "hey_jarvis"
 
 
 def test_configure_logging_writes_errors_log_always(tmp_path, isolated_logging):
