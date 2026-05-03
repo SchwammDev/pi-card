@@ -31,7 +31,7 @@ class VoiceAssistant:
         language: str = "en",
         silence_timeout: float = 5.0,
         max_stt_retries: int = 2,
-        min_silence_duration_ms: int = 1500,
+        min_silence_duration_ms: int = 2500,
         ready_pulse_s: float = DEFAULT_READY_PULSE_S,
     ):
         self.audio_in = audio_in
