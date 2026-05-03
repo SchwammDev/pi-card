@@ -1,3 +1,4 @@
+from collections import deque
 from dataclasses import dataclass
 
 import numpy as np
@@ -8,6 +9,7 @@ DEFAULT_SILENCE_MS_AFTER_SPEECH = 500
 DEFAULT_SILENCE_MS_NO_SPEECH = 5_000
 DEFAULT_MAX_MS = 20_000
 DEFAULT_START_SPEECH_FRAMES = 2
+DEFAULT_PREROLL_FRAMES = 8
 
 _SPEECH_RMS_THRESHOLD = 1500
 
@@ -29,6 +31,7 @@ def capture_utterance(
     silence_ms_no_speech: int = DEFAULT_SILENCE_MS_NO_SPEECH,
     max_ms: int = DEFAULT_MAX_MS,
     start_speech_frames: int = DEFAULT_START_SPEECH_FRAMES,
+    preroll_frames: int = DEFAULT_PREROLL_FRAMES,
 ) -> Utterance | SilenceTimeout:
     """Read frames from `audio_in` until one of three conditions fires:
 
@@ -44,7 +47,8 @@ def capture_utterance(
     max_frames = _ms_to_frames(max_ms)
 
     captured: list[bytes] = []
-    speech_streak: list[bytes] = []
+    preroll: deque[bytes] = deque(maxlen=max(preroll_frames, start_speech_frames))
+    speech_streak = 0
     leading_silence = 0
     trailing_silence = 0
 
@@ -53,15 +57,15 @@ def capture_utterance(
         is_speech = _is_speech(frame)
 
         if not captured:
+            preroll.append(frame)
             if is_speech:
-                speech_streak.append(frame)
-                if len(speech_streak) >= start_speech_frames:
-                    captured.extend(speech_streak)
-                    speech_streak.clear()
+                speech_streak += 1
+                if speech_streak >= start_speech_frames:
+                    captured.extend(preroll)
                     if len(captured) >= max_frames:
-                        return Utterance(pcm=b"".join(captured))
+                        return Utterance(pcm=b"".join(captured[:max_frames]))
             else:
-                speech_streak.clear()
+                speech_streak = 0
                 leading_silence += 1
                 if leading_silence >= no_speech_limit:
                     return SilenceTimeout()
