@@ -11,6 +11,11 @@ SILERO_SAMPLE_RATE = 16_000
 INT16_MAX = 32768.0
 DEFAULT_THRESHOLD = 0.5
 DEFAULT_SILERO_MODEL_PATH = Path.home() / ".local/share/pi-card/silero_vad.onnx"
+SILERO_MODEL_URL = (
+    "https://raw.githubusercontent.com/snakers4/silero-vad/"
+    "7e30209a3e901f9842f81b225f3e93d8199902b1/"
+    "src/silero_vad/data/silero_vad.onnx"
+)
 
 
 class SpeechDetector(Protocol):
@@ -56,11 +61,29 @@ def load_silero_speech_detector(
 ) -> SileroSpeechDetector:
     import onnxruntime  # type: ignore[import-not-found]
 
+    _ensure_silero_model_downloaded(model_path)
     session = onnxruntime.InferenceSession(
         str(model_path),
         providers=["CPUExecutionProvider"],
     )
     return SileroSpeechDetector(_OnnxSileroBackend(session), threshold=threshold)
+
+
+def _ensure_silero_model_downloaded(model_path: Path) -> None:
+    if model_path.exists():
+        return
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    _download_to(SILERO_MODEL_URL, model_path)
+
+
+def _download_to(url: str, destination: Path) -> None:
+    import urllib.request
+
+    tmp_path = destination.with_suffix(destination.suffix + ".part")
+    with urllib.request.urlopen(url) as response, tmp_path.open("wb") as out:
+        while chunk := response.read(64 * 1024):
+            out.write(chunk)
+    tmp_path.replace(destination)
 
 
 class _OnnxSileroBackend:
