@@ -33,7 +33,11 @@ class WhisperSTT:
         samples = np.frombuffer(pcm, dtype=np.int16).astype(np.float32)
         samples /= _INT16_FULL_SCALE
 
-        kwargs: dict = {"language": language, "vad_filter": True}
+        kwargs: dict = {
+            "language": language,
+            "vad_filter": True,
+            "condition_on_previous_text": False,
+        }
         prompt = self._initial_prompts.get(language)
         if prompt:
             kwargs["initial_prompt"] = prompt

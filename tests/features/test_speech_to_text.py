@@ -71,6 +71,15 @@ def test_enables_vad_filter_to_drop_non_speech_segments():
     assert model.calls[-1]["kwargs"].get("vad_filter") is True
 
 
+def test_disables_conditioning_on_previous_text_to_avoid_self_reinforcing_hallucinations():
+    model = FakeWhisperModel({"en": ""})
+    stt = WhisperSTT(model=model)
+
+    stt.transcribe(_silent_pcm(1.0), language="en")
+
+    assert model.calls[-1]["kwargs"].get("condition_on_previous_text") is False
+
+
 def test_forwards_language_specific_initial_prompt_to_the_model():
     model = FakeWhisperModel({"en": ""})
     stt = WhisperSTT(model=model, initial_prompts={"en": "Voice assistant Q&A."})

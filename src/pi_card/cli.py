@@ -21,8 +21,8 @@ EN_VOICE = "en_GB-jenny_dioco-medium"
 FR_VOICE = "fr_FR-siwis-medium"
 
 WHISPER_INITIAL_PROMPTS = {
-    "en": "A spoken conversation between a user and a voice assistant.",
-    "fr": "Une conversation orale entre un utilisateur et un assistant vocal.",
+    "en": "Voice assistant Q&A.",
+    "fr": "Questions à un assistant vocal.",
 }
 
 
