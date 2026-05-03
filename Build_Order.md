@@ -61,7 +61,7 @@ Pass criteria:
 
 **Done when:** the four adapters exist and the per-adapter bring-up gate above passes. End-to-end behavior moves to the ears-only gate in Phase 5, which needs the CLI wiring.
 
-## Phase 5 — Packaging and end-to-end
+## Phase 5 — Packaging and end-to-end ✅ ears-only gate passed (fresh-Pi gate deferred)
 
 - `cli.py` and `__main__.py` with the documented flags
 - Top-level wiring that constructs adapters from `Config` and hands them to `VoiceAssistant`
@@ -71,7 +71,7 @@ Pass criteria:
 
 **Done when:** `make install && make service` brings the assistant up on a fresh Pi *and* the ears-only gate below passes.
 
-### Manual gate — full conversation, ears only
+### Manual gate — full conversation, ears only ✅ passed
 
 With all four adapters wired in through the CLI, run the assistant and have a real conversation. You're judging *felt* quality, which acceptance tests cannot.
 
