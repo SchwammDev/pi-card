@@ -218,6 +218,17 @@ def test_signals_readiness_before_listening_for_first_wake_word(world):
     assert_first_led_signal_was_ready_cue(world)
 
 
+def test_ready_signal_includes_an_audible_tone(world):
+    trigger_wake_word(world)
+    user_says(world, "Hello", language="en")
+    assistant_will_reply(world, "Hi.")
+
+    run_until_exhausted(world)
+
+    from pi_card.audio_tones import ready_tone
+    assert ready_tone() in world.audio_out.played
+
+
 def test_wake_word_engine_state_is_reset_between_conversations(world):
     _run_two_back_to_back_conversations(world)
 

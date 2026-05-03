@@ -1,5 +1,6 @@
 import time
 
+from pi_card.audio_tones import ready_tone
 from pi_card.conversation import Conversation
 from pi_card.hardware.ai_agent import AIAgent
 from pi_card.hardware.audio_input import AudioInput
@@ -9,7 +10,7 @@ from pi_card.pipeline.stt import WhisperSTT
 from pi_card.pipeline.tts import PiperTTS
 from pi_card.pipeline.wake_word import WakeWordDetector
 
-DEFAULT_READY_PULSE_S = 0.5
+DEFAULT_READY_PULSE_S = 1.5
 
 
 class VoiceAssistant:
@@ -52,6 +53,7 @@ class VoiceAssistant:
 
     def _signal_ready(self) -> None:
         self.leds.set_state(LEDState.THINKING)
+        self.audio_out.play(ready_tone())
         if self.ready_pulse_s > 0:
             time.sleep(self.ready_pulse_s)
         self.leds.set_state(LEDState.OFF)

@@ -7,6 +7,11 @@ _ERROR_TONE_FREQUENCY_HZ = 440
 _ERROR_TONE_PEAK_AMPLITUDE = 10_000
 _FADE_MS = 20
 
+READY_TONE_DURATION_MS = 360
+_READY_TONE_LOW_HZ = 587
+_READY_TONE_HIGH_HZ = 880
+_READY_TONE_PEAK_AMPLITUDE = 10_000
+
 
 def error_tone() -> bytes:
     """Short 440 Hz sine at 16 kHz mono 16-bit PCM, with linear fades to avoid clicks."""
@@ -20,3 +25,18 @@ def error_tone() -> bytes:
     envelope[-fade:] = np.linspace(1.0, 0.0, fade)
 
     return (signal * envelope * _ERROR_TONE_PEAK_AMPLITUDE).astype(np.int16).tobytes()
+
+
+def ready_tone() -> bytes:
+    n = SAMPLE_RATE_HZ * READY_TONE_DURATION_MS // 1000
+    half = n // 2
+    t = np.arange(n) / SAMPLE_RATE_HZ
+    frequencies = np.where(np.arange(n) < half, _READY_TONE_LOW_HZ, _READY_TONE_HIGH_HZ)
+    signal = np.sin(2 * np.pi * frequencies * t)
+
+    fade = SAMPLE_RATE_HZ * _FADE_MS // 1000
+    envelope = np.ones(n)
+    envelope[:fade] = np.linspace(0.0, 1.0, fade)
+    envelope[-fade:] = np.linspace(1.0, 0.0, fade)
+
+    return (signal * envelope * _READY_TONE_PEAK_AMPLITUDE).astype(np.int16).tobytes()
