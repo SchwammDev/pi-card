@@ -69,3 +69,44 @@ def test_enables_vad_filter_to_drop_non_speech_segments():
     stt.transcribe(_silent_pcm(1.0), language="en")
 
     assert model.calls[-1]["kwargs"].get("vad_filter") is True
+
+
+def test_forwards_language_specific_initial_prompt_to_the_model():
+    model = FakeWhisperModel({"en": ""})
+    stt = WhisperSTT(model=model, initial_prompts={"en": "Voice assistant Q&A."})
+
+    stt.transcribe(_silent_pcm(0.5), language="en")
+
+    assert model.calls[-1]["kwargs"].get("initial_prompt") == "Voice assistant Q&A."
+
+
+def test_uses_language_specific_prompt_for_each_language():
+    prompts = {"en": "english prompt", "fr": "french prompt"}
+    model, stt = _stt_with_prompts(prompts)
+
+    _transcribe_short(stt, "en")
+    _transcribe_short(stt, "fr")
+
+    assert _prompts_seen(model) == ["english prompt", "french prompt"]
+
+
+def _stt_with_prompts(prompts):
+    model = FakeWhisperModel({lang: "" for lang in prompts})
+    return model, WhisperSTT(model=model, initial_prompts=prompts)
+
+
+def _transcribe_short(stt, language):
+    stt.transcribe(_silent_pcm(0.5), language=language)
+
+
+def _prompts_seen(model):
+    return [c["kwargs"].get("initial_prompt") for c in model.calls]
+
+
+def test_omits_initial_prompt_when_no_prompt_is_configured_for_language():
+    model = FakeWhisperModel({"en": ""})
+    stt = WhisperSTT(model=model)
+
+    stt.transcribe(_silent_pcm(0.5), language="en")
+
+    assert "initial_prompt" not in model.calls[-1]["kwargs"]

@@ -19,6 +19,11 @@ TRANSCRIPTS_LOGGER_NAME = "pi_card.transcripts"
 EN_VOICE = "en_GB-alan-medium"
 FR_VOICE = "fr_FR-siwis-medium"
 
+WHISPER_INITIAL_PROMPTS = {
+    "en": "Voice assistant conversation. The user asks short factual questions; the assistant answers briefly.",
+    "fr": "Conversation avec un assistant vocal. L'utilisateur pose des questions courtes; l'assistant répond brièvement.",
+}
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -142,7 +147,7 @@ def build_assistant(config: Config) -> VoiceAssistant:
         leds=ReSpeakerLEDs(),
         agent=OpenAIAgent(client=client, model=config.model),
         wake_word_detector=WakeWordDetector(engine=load_openwakeword_engine()),
-        stt=WhisperSTT(model=load_faster_whisper_model()),
+        stt=WhisperSTT(model=load_faster_whisper_model(), initial_prompts=WHISPER_INITIAL_PROMPTS),
         tts_by_language={
             "en": PiperTTS(voice=load_piper_voice(EN_VOICE)),
             "fr": PiperTTS(voice=load_piper_voice(FR_VOICE)),

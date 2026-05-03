@@ -13,8 +13,14 @@ class WhisperSTT:
     """Adapts raw 16 kHz mono PCM bytes to a Faster-Whisper model and
     concatenates the segments into a single transcript."""
 
-    def __init__(self, *, model: WhisperModel):
+    def __init__(
+        self,
+        *,
+        model: WhisperModel,
+        initial_prompts: dict[str, str] | None = None,
+    ):
         self._model = model
+        self._initial_prompts = dict(initial_prompts or {})
 
     def transcribe(self, pcm: bytes, language: str) -> str:
         if len(pcm) % SAMPLE_WIDTH_BYTES != 0:
@@ -27,7 +33,12 @@ class WhisperSTT:
         samples = np.frombuffer(pcm, dtype=np.int16).astype(np.float32)
         samples /= _INT16_FULL_SCALE
 
-        segments, _info = self._model.transcribe(samples, language=language, vad_filter=True)
+        kwargs: dict = {"language": language, "vad_filter": True}
+        prompt = self._initial_prompts.get(language)
+        if prompt:
+            kwargs["initial_prompt"] = prompt
+
+        segments, _info = self._model.transcribe(samples, **kwargs)
         return "".join(segment.text for segment in segments).strip()
 
 
