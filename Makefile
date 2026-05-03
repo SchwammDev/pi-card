@@ -3,6 +3,7 @@
 CONFIG_DIR  := $(HOME)/.config/pi-card
 CONFIG_FILE := $(CONFIG_DIR)/config.yaml
 STATE_DIR   := $(HOME)/.local/state/pi-card
+SHARE_DIR   := $(HOME)/.local/share/pi-card
 SYSTEMD_DIR := $(HOME)/.config/systemd/user
 UNIT_NAME   := pi-card.service
 UNIT_FILE   := $(SYSTEMD_DIR)/$(UNIT_NAME)
@@ -38,7 +39,8 @@ uninstall:
 	-systemctl --user daemon-reload 2>/dev/null || true
 	-rm -rf $(CONFIG_DIR)
 	-rm -rf $(STATE_DIR)
-	@echo "pi-card uninstalled (service, config, and logs removed)."
+	-rm -rf $(SHARE_DIR)
+	@echo "pi-card uninstalled (service, config, logs, and downloaded voices removed)."
 
 clean:
 	rm -rf .venv .pytest_cache
