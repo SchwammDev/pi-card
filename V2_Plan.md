@@ -16,7 +16,7 @@ Order: **silero-vad first** (UX-blocking — device is hard to use without it), 
 ### Design decisions for silero-vad replacement
 
 - **Dependency:** `onnxruntime` directly, not the `silero-vad` PyPI package — the latter pulls full torch + CUDA wheels (~3 GB), unusable on a Pi 4. `onnxruntime` is ~50 MB with an aarch64 manylinux wheel.
-- **Model file:** `silero_vad.onnx` (2.3 MB) fetched by `make install` alongside Piper voices. Same mental model for "where models live"; not committed to the repo.
+- **Model file:** `silero_vad.onnx` (2.3 MB) downloaded on first use by the loader, mirroring `load_piper_voice`. Cached under `~/.local/share/pi-card/`. Not committed to the repo, not fetched at install time.
 - **Interface:** new `SpeechDetector` ABC with `is_speech(frame) -> bool` and `reset()`. Production wires `SileroSpeechDetector` (wraps an `onnxruntime.InferenceSession`); tests wire a scripted fake.
 - **State machine stays:** `capture_utterance`'s start-debounce / preroll / trailing-silence / max-duration logic is preserved. Only `_is_speech` is replaced; the detector is injected.
 - **Frame-size bridging:** audio frames are 1280 samples (80 ms), silero wants 512 samples (32 ms) — non-integer ratio. `SileroSpeechDetector` buffers samples internally, drains full 512-sample windows per call, aggregates per-window probabilities into one bool, holds the remainder for the next call. `reset()` flushes between utterances.
