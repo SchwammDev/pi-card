@@ -29,7 +29,14 @@ _MESSAGES: dict[str, _LanguageMessages] = {
     ),
     "fr": _LanguageMessages(
         exit_phrases=("au revoir", "c'est tout"),
-        switch_triggers={"en": ("passe en anglais", "parle anglais")},
+        switch_triggers={
+            "en": (
+                "passe en anglais",
+                "passer en anglais",
+                "parle anglais",
+                "parler anglais",
+            ),
+        },
         switch_ack="D'accord, je parle français maintenant.",
         network_error_cue="Je n'arrive pas à joindre mon cerveau pour le moment.",
         repeat_prompt="Désolé, pouvez-vous répéter ?",
