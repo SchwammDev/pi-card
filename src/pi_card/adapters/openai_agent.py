@@ -22,18 +22,29 @@ class OpenAIAgent(AIAgent):
     transport settings live outside this class — and so that tests can drive
     it with a fake client."""
 
-    def __init__(self, *, client: _Client, model: str):
+    def __init__(
+        self,
+        *,
+        client: _Client,
+        model: str,
+        extra_body: dict | None = None,
+    ):
         self._client = client
         self._model = model
+        self._extra_body = extra_body
 
     def chat(self, messages: list[Message]) -> Message:
         if not messages:
             raise ValueError("messages must not be empty")
 
-        response = self._client.chat.completions.create(
-            model=self._model,
-            messages=[_message_to_openai(m) for m in messages],
-        )
+        kwargs: dict = {
+            "model": self._model,
+            "messages": [_message_to_openai(m) for m in messages],
+        }
+        if self._extra_body is not None:
+            kwargs["extra_body"] = self._extra_body
+
+        response = self._client.chat.completions.create(**kwargs)
         return _openai_to_message(response.choices[0].message)
 
 

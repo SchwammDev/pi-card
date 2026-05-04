@@ -157,7 +157,9 @@ def build_assistant(config: Config) -> VoiceAssistant:
         audio_in=ReSpeakerInput(),
         audio_out=USBSpeakerOutput(),
         leds=ReSpeakerLEDs(),
-        agent=OpenAIAgent(client=client, model=config.model),
+        agent=OpenAIAgent(
+            client=client, model=config.model, extra_body=config.extra_body
+        ),
         wake_word_detector=WakeWordDetector(
             engine=load_openwakeword_engine(model_name=config.wake_word),
             model_name=config.wake_word,

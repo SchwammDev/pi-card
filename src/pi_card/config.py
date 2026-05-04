@@ -23,6 +23,7 @@ class Config:
     max_stt_retries: int = 2
     wake_word: str = DEFAULT_WAKE_WORD
     min_silence_duration_ms: int = 2500
+    extra_body: dict | None = None
 
     @classmethod
     def load(cls, path: str | Path) -> "Config":
@@ -55,6 +56,12 @@ class Config:
                 f"supported values: {supported}"
             )
 
+        extra_body = raw.get("extra_body")
+        if extra_body is not None and not isinstance(extra_body, dict):
+            raise ConfigError(
+                f"Config file {path} has 'extra_body' but it is not a YAML mapping"
+            )
+
         return cls(
             base_url=agent["base_url"],
             api_key=agent["api_key"],
@@ -66,4 +73,5 @@ class Config:
             min_silence_duration_ms=int(
                 raw.get("min_silence_duration_ms", cls.min_silence_duration_ms)
             ),
+            extra_body=extra_body,
         )

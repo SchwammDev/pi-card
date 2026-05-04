@@ -36,10 +36,15 @@ def _assistant_response(content: str, tool_calls=None) -> SimpleNamespace:
     return SimpleNamespace(choices=[SimpleNamespace(message=message)])
 
 
-def _make_agent(response: SimpleNamespace, model: str = "gpt-test") -> tuple[OpenAIAgent, FakeCompletions]:
+def _make_agent(
+    response: SimpleNamespace, model: str = "gpt-test", extra_body=None
+) -> tuple[OpenAIAgent, FakeCompletions]:
     completions = FakeCompletions(response=response)
     client = FakeClient(chat=FakeChat(completions=completions))
-    return OpenAIAgent(client=client, model=model), completions
+    return (
+        OpenAIAgent(client=client, model=model, extra_body=extra_body),
+        completions,
+    )
 
 
 def test_sends_model_and_maps_simple_messages_to_openai_shape():
@@ -114,6 +119,25 @@ def test_parses_tool_calls_on_incoming_reply():
     assert reply.role == "assistant"
     assert reply.content is None
     assert reply.tool_calls == [ToolCall(id="call_42", name="lookup", arguments='{"q":"x"}')]
+
+
+def test_extra_body_is_omitted_when_unset_so_non_thinking_providers_are_unaffected():
+    agent, completions = _make_agent(_assistant_response("hi"))
+
+    agent.chat([Message(role="user", content="hello")])
+
+    assert "extra_body" not in completions.received_kwargs
+
+
+def test_extra_body_is_forwarded_to_chat_completions_so_qwen_thinking_can_be_disabled():
+    qwen_disable_thinking = {"chat_template_kwargs": {"enable_thinking": False}}
+    agent, completions = _make_agent(
+        _assistant_response("hi"), extra_body=qwen_disable_thinking
+    )
+
+    agent.chat([Message(role="user", content="hello")])
+
+    assert completions.received_kwargs["extra_body"] == qwen_disable_thinking
 
 
 def test_empty_message_list_is_rejected():

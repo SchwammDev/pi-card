@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+import yaml
 
 from pi_card.config import Config, ConfigError
 
@@ -140,6 +141,36 @@ def test_config_overrides_min_silence_duration(tmp_path):
     config = _load_with_overrides(tmp_path, min_silence_duration_ms=2000)
 
     assert config.min_silence_duration_ms == 2000
+
+
+def _load_with_extra_body(tmp_path, extra_body) -> Config:
+    body = yaml.safe_dump(
+        {
+            "agent": {
+                "base_url": "https://api.example.com/v1",
+                "api_key": "secret",
+                "model": "qwen3",
+            },
+            "extra_body": extra_body,
+        }
+    )
+    path = tmp_path / "config.yaml"
+    path.write_text(body)
+    return Config.load(path)
+
+
+def test_config_extra_body_is_none_by_default(tmp_path):
+    config = _load_with_overrides(tmp_path)
+
+    assert config.extra_body is None
+
+
+def test_config_loads_extra_body_passthrough_for_provider_specific_params(tmp_path):
+    config = _load_with_extra_body(
+        tmp_path, {"chat_template_kwargs": {"enable_thinking": False}}
+    )
+
+    assert config.extra_body == {"chat_template_kwargs": {"enable_thinking": False}}
 
 
 def test_config_fails_fast_when_file_does_not_exist(tmp_path):
