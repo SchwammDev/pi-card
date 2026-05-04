@@ -1,5 +1,9 @@
 # v2 Plan
 
+## Status
+
+All three items shipped. Sentence-chunker uses a minimum-viable splitter (terminal-punct + whitespace, 16-char floor) — accepted trade-off in `sentence_chunker.py`. Tighten only if real-Pi testing surfaces systematic mis-splits.
+
 ## What v1 hardware testing taught us
 
 - **Energy-RMS VAD is fundamentally limited.** It cannot distinguish a 2-frame "yes" from a 2-frame noise burst — they look identical. Tuning `pause_tolerance` / `speech_rms_threshold` only shifts which mistakes happen.
