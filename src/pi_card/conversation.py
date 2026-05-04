@@ -13,6 +13,7 @@ from pi_card.messages import (
     switch_acknowledgement,
 )
 from pi_card.pipeline.capture import SilenceTimeout, Utterance, capture_utterance
+from pi_card.pipeline.sentence_chunker import chunk_sentences
 from pi_card.pipeline.speech_detector import SpeechDetector
 from pi_card.pipeline.stt import WhisperSTT
 from pi_card.pipeline.tts import PiperTTS
@@ -81,16 +82,31 @@ class Conversation:
             return self._speak(switch_acknowledgement(language=switch_target), language=switch_target)
 
         self._history.append(Message(role="user", content=text))
+        return self._stream_reply_to_speech()
+
+    def _stream_reply_to_speech(self) -> bool:
+        spoken_chunks: list[str] = []
         try:
-            reply = self._agent.chat(self._history)
+            for chunk in chunk_sentences(self._agent.stream(self._history)):
+                if not self._speak(chunk, language=self._language):
+                    self._record_spoken_reply(spoken_chunks)
+                    return False
+                spoken_chunks.append(chunk)
         except Exception:
-            _logger.exception("agent call failed")
+            _logger.exception("agent stream failed")
+            self._record_spoken_reply(spoken_chunks)
             self._announce_network_failure()
             return False
-        self._history.append(reply)
 
-        _transcripts.info("assistant (%s): %s", self._language, reply.content or "")
-        return self._speak(reply.content or "", language=self._language)
+        self._record_spoken_reply(spoken_chunks)
+        return True
+
+    def _record_spoken_reply(self, spoken_chunks: list[str]) -> None:
+        if not spoken_chunks:
+            return
+        content = " ".join(spoken_chunks)
+        self._history.append(Message(role="assistant", content=content))
+        _transcripts.info("assistant (%s): %s", self._language, content)
 
     def _listen_and_transcribe(self) -> str | None:
         """Capture an utterance and transcribe it, retrying on low confidence.

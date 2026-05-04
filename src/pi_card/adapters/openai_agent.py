@@ -1,6 +1,6 @@
-from typing import Protocol
+from typing import Iterator, Protocol
 
-from pi_card.hardware.ai_agent import AIAgent, Message, ToolCall
+from pi_card.hardware.ai_agent import AIAgent, Message
 
 
 class _ChatCompletions(Protocol):
@@ -33,50 +33,26 @@ class OpenAIAgent(AIAgent):
         self._model = model
         self._extra_body = extra_body
 
-    def chat(self, messages: list[Message]) -> Message:
+    def stream(self, messages: list[Message]) -> Iterator[str]:
         if not messages:
             raise ValueError("messages must not be empty")
 
         kwargs: dict = {
             "model": self._model,
             "messages": [_message_to_openai(m) for m in messages],
+            "stream": True,
         }
         if self._extra_body is not None:
             kwargs["extra_body"] = self._extra_body
 
-        response = self._client.chat.completions.create(**kwargs)
-        return _openai_to_message(response.choices[0].message)
+        for event in self._client.chat.completions.create(**kwargs):
+            content = getattr(event.choices[0].delta, "content", None)
+            if content:
+                yield content
 
 
 def _message_to_openai(message: Message) -> dict:
-    payload: dict = {"role": message.role, "content": message.content}
-    if message.tool_calls:
-        payload["tool_calls"] = [
-            {
-                "id": tc.id,
-                "type": "function",
-                "function": {"name": tc.name, "arguments": tc.arguments},
-            }
-            for tc in message.tool_calls
-        ]
-    if message.tool_call_id is not None:
-        payload["tool_call_id"] = message.tool_call_id
-    if message.name is not None:
-        payload["name"] = message.name
-    return payload
-
-
-def _openai_to_message(raw) -> Message:
-    tool_calls: list[ToolCall] = []
-    for tc in getattr(raw, "tool_calls", None) or []:
-        tool_calls.append(
-            ToolCall(id=tc.id, name=tc.function.name, arguments=tc.function.arguments)
-        )
-    return Message(
-        role=getattr(raw, "role", "assistant"),
-        content=getattr(raw, "content", None),
-        tool_calls=tool_calls,
-    )
+    return {"role": message.role, "content": message.content}
 
 
 def load_openai_client(*, base_url: str, api_key: str):

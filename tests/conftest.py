@@ -106,6 +106,9 @@ def world(
     fake_fr_voice,
     fake_speech_detector,
 ):
+    snapshot = lambda: fake_agent.deltas_yielded_for_active_reply
+    fake_en_voice.attach_stream_observer(snapshot)
+    fake_fr_voice.attach_stream_observer(snapshot)
     return World(
         assistant=assistant,
         audio_in=fake_audio_in,

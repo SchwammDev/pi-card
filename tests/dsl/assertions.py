@@ -131,6 +131,21 @@ def assert_wake_word_engine_was_reset_per_session(world: World, *, sessions: int
         )
 
 
+def assert_first_chunk_was_spoken_before_full_reply_arrived(world: World, *, language: str) -> None:
+    voice = world.voices[language]
+    if not voice.deltas_yielded_at_first_synthesize:
+        raise AssertionError(
+            f"expected first TTS synthesize to be recorded; voice received nothing in {language}"
+        )
+    yielded_at_first = voice.deltas_yielded_at_first_synthesize[0]
+    total = world.agent.deltas_yielded_for_active_reply
+    if yielded_at_first >= total:
+        raise AssertionError(
+            f"expected first TTS chunk to arrive before the stream completed; "
+            f"first synthesize saw {yielded_at_first}/{total} deltas yielded"
+        )
+
+
 def assert_last_call_included_prior_assistant_reply(world: World, text: str) -> None:
     last_call = world.agent.received[-1]
     if not any(text in reply for reply in _assistant_messages_in(last_call)):

@@ -1,24 +1,20 @@
-"""The OpenAI agent is a thin translator between our Message dataclass and
-the OpenAI chat-completions wire shape. These tests exercise that mapping
-against an injected fake client — no network, no real SDK required."""
-
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 
 import pytest
 
 from pi_card.adapters.openai_agent import OpenAIAgent
-from pi_card.hardware.ai_agent import Message, ToolCall
+from pi_card.hardware.ai_agent import Message
 
 
 @dataclass
 class FakeCompletions:
-    response: SimpleNamespace
+    chunks: list[SimpleNamespace]
     received_kwargs: dict = field(default_factory=dict)
 
     def create(self, **kwargs):
         self.received_kwargs = kwargs
-        return self.response
+        return iter(self.chunks)
 
 
 @dataclass
@@ -31,15 +27,15 @@ class FakeClient:
     chat: FakeChat
 
 
-def _assistant_response(content: str, tool_calls=None) -> SimpleNamespace:
-    message = SimpleNamespace(role="assistant", content=content, tool_calls=tool_calls)
-    return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+def _delta_chunk(content: str | None) -> SimpleNamespace:
+    delta = SimpleNamespace(content=content)
+    return SimpleNamespace(choices=[SimpleNamespace(delta=delta)])
 
 
 def _make_agent(
-    response: SimpleNamespace, model: str = "gpt-test", extra_body=None
+    chunks: list[SimpleNamespace], model: str = "gpt-test", extra_body=None
 ) -> tuple[OpenAIAgent, FakeCompletions]:
-    completions = FakeCompletions(response=response)
+    completions = FakeCompletions(chunks=chunks)
     client = FakeClient(chat=FakeChat(completions=completions))
     return (
         OpenAIAgent(client=client, model=model, extra_body=extra_body),
@@ -47,84 +43,59 @@ def _make_agent(
     )
 
 
-def test_sends_model_and_maps_simple_messages_to_openai_shape():
-    agent, completions = _make_agent(_assistant_response("hi there"), model="my-model")
+def _drain(agent: OpenAIAgent, messages: list[Message]) -> list[str]:
+    return list(agent.stream(messages))
 
-    agent.chat(
-        [
-            Message(role="system", content="be concise"),
-            Message(role="user", content="hello"),
-        ]
-    )
+
+def test_forwards_the_configured_model_name():
+    agent, completions = _make_agent([_delta_chunk("hi")], model="my-model")
+
+    _drain(agent, [Message(role="user", content="hi")])
 
     assert completions.received_kwargs["model"] == "my-model"
+
+
+def test_maps_messages_to_openai_role_content_dicts():
+    agent, completions = _make_agent([_delta_chunk("hi")])
+
+    _drain(agent, [Message(role="system", content="be concise"), Message(role="user", content="hi")])
+
     assert completions.received_kwargs["messages"] == [
         {"role": "system", "content": "be concise"},
-        {"role": "user", "content": "hello"},
+        {"role": "user", "content": "hi"},
     ]
 
 
-def test_returns_assistant_reply_as_message():
-    agent, _ = _make_agent(_assistant_response("sunny and warm"))
+def test_requests_a_streaming_response_so_chunks_arrive_incrementally():
+    agent, completions = _make_agent([_delta_chunk("hi")])
 
-    reply = agent.chat([Message(role="user", content="weather?")])
+    _drain(agent, [Message(role="user", content="hello")])
 
-    assert reply == Message(role="assistant", content="sunny and warm")
-
-
-def test_serialises_tool_calls_on_outgoing_messages():
-    agent, completions = _make_agent(_assistant_response("done"))
-
-    agent.chat(
-        [
-            Message(
-                role="assistant",
-                content=None,
-                tool_calls=[ToolCall(id="call_1", name="get_time", arguments='{"tz":"UTC"}')],
-            ),
-            Message(role="tool", tool_call_id="call_1", name="get_time", content="12:00"),
-        ]
-    )
-
-    assert completions.received_kwargs["messages"] == [
-        {
-            "role": "assistant",
-            "content": None,
-            "tool_calls": [
-                {
-                    "id": "call_1",
-                    "type": "function",
-                    "function": {"name": "get_time", "arguments": '{"tz":"UTC"}'},
-                }
-            ],
-        },
-        {
-            "role": "tool",
-            "content": "12:00",
-            "tool_call_id": "call_1",
-            "name": "get_time",
-        },
-    ]
+    assert completions.received_kwargs["stream"] is True
 
 
-def test_parses_tool_calls_on_incoming_reply():
-    tool_call = SimpleNamespace(
-        id="call_42",
-        function=SimpleNamespace(name="lookup", arguments='{"q":"x"}'),
-    )
-    agent, _ = _make_agent(_assistant_response(None, tool_calls=[tool_call]))
+def test_yields_delta_content_in_order():
+    chunks = [_delta_chunk("Hello"), _delta_chunk(", "), _delta_chunk("world.")]
+    agent, _ = _make_agent(chunks)
 
-    reply = agent.chat([Message(role="user", content="look it up")])
+    deltas = _drain(agent, [Message(role="user", content="hi")])
 
-    assert reply.role == "assistant"
-    assert reply.content is None
-    assert reply.tool_calls == [ToolCall(id="call_42", name="lookup", arguments='{"q":"x"}')]
+    assert deltas == ["Hello", ", ", "world."]
+
+
+def test_skips_empty_or_missing_content_chunks_so_role_only_frames_do_not_corrupt_output():
+    chunks = [_delta_chunk(None), _delta_chunk(""), _delta_chunk("text")]
+    agent, _ = _make_agent(chunks)
+
+    deltas = _drain(agent, [Message(role="user", content="hi")])
+
+    assert deltas == ["text"]
 
 
 def test_extra_body_is_omitted_when_unset_so_non_thinking_providers_are_unaffected():
-    agent, completions = _make_agent(_assistant_response("hi"))
+    agent, completions = _make_agent([_delta_chunk("hi")])
 
-    agent.chat([Message(role="user", content="hello")])
+    _drain(agent, [Message(role="user", content="hello")])
 
     assert "extra_body" not in completions.received_kwargs
 
@@ -132,16 +103,16 @@ def test_extra_body_is_omitted_when_unset_so_non_thinking_providers_are_unaffect
 def test_extra_body_is_forwarded_to_chat_completions_so_qwen_thinking_can_be_disabled():
     qwen_disable_thinking = {"chat_template_kwargs": {"enable_thinking": False}}
     agent, completions = _make_agent(
-        _assistant_response("hi"), extra_body=qwen_disable_thinking
+        [_delta_chunk("hi")], extra_body=qwen_disable_thinking
     )
 
-    agent.chat([Message(role="user", content="hello")])
+    _drain(agent, [Message(role="user", content="hello")])
 
     assert completions.received_kwargs["extra_body"] == qwen_disable_thinking
 
 
 def test_empty_message_list_is_rejected():
-    agent, _ = _make_agent(_assistant_response("unused"))
+    agent, _ = _make_agent([_delta_chunk("unused")])
 
     with pytest.raises(ValueError):
-        agent.chat([])
+        _drain(agent, [])

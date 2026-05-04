@@ -2,6 +2,7 @@ from pi_card.hardware.leds import LEDState
 
 from tests.dsl.actions import (
     assistant_will_reply,
+    assistant_will_stream_reply,
     run_until_exhausted,
     trigger_wake_word,
     user_says,
@@ -14,6 +15,7 @@ from tests.dsl.assertions import (
     assert_assistant_did_not_speak_in,
     assert_assistant_spoke,
     assert_conversation_started_fresh_at_call,
+    assert_first_chunk_was_spoken_before_full_reply_arrived,
     assert_first_led_signal_was_ready_cue,
     assert_history_accumulated_within_conversation,
     assert_input_was_drained_at_least,
@@ -233,6 +235,23 @@ def test_wake_word_engine_state_is_reset_between_conversations(world):
     _run_two_back_to_back_conversations(world)
 
     assert_wake_word_engine_was_reset_per_session(world, sessions=2)
+
+
+def _user_asks_and_assistant_streams_two_sentences(world):
+    trigger_wake_word(world)
+    user_says(world, "Tell me a story", language="en")
+    assistant_will_stream_reply(
+        world,
+        ["This is the opening sentence of the reply. ", "Here is the second part."],
+    )
+
+
+def test_first_sentence_is_spoken_before_the_agent_stream_completes(world):
+    _user_asks_and_assistant_streams_two_sentences(world)
+
+    run_until_exhausted(world)
+
+    assert_first_chunk_was_spoken_before_full_reply_arrived(world, language="en")
 
 
 def test_wake_word_command_alone_with_no_speech_returns_to_wake_word_mode(world):

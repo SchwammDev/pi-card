@@ -1,7 +1,7 @@
 from pi_card.hardware.audio_input import AudioInput
 from pi_card.hardware.audio_output import AudioOutput
 from pi_card.hardware.leds import LEDController, LEDState
-from pi_card.hardware.ai_agent import AIAgent, Message, ToolCall
+from pi_card.hardware.ai_agent import AIAgent, Message
 
 __all__ = [
     "AudioInput",
@@ -10,5 +10,4 @@ __all__ = [
     "LEDState",
     "AIAgent",
     "Message",
-    "ToolCall",
 ]

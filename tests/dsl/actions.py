@@ -42,18 +42,22 @@ def assistant_will_reply(world: World, text: str) -> None:
     world.agent.queue(text)
 
 
+def assistant_will_stream_reply(world: World, deltas: list[str]) -> None:
+    world.agent.queue(deltas)
+
+
 def agent_call_will_fail(world: World, exception: Exception) -> None:
     """Install a next-call exception on the fake agent."""
-    original_chat = world.agent.chat
+    original_stream = world.agent.stream
     raised = {"done": False}
 
-    def _failing_chat(messages):
+    def _failing_stream(messages):
         if not raised["done"]:
             raised["done"] = True
             raise exception
-        return original_chat(messages)
+        return original_stream(messages)
 
-    world.agent.chat = _failing_chat  # type: ignore[method-assign]
+    world.agent.stream = _failing_stream  # type: ignore[method-assign]
 
 
 def tts_will_fail(world: World, *, language: str, exception: Exception) -> None:
