@@ -13,6 +13,7 @@ The active language can be switched mid-session via voice command (see `README.m
 
 - **Language:** Python
 - **Wake word detection:** openWakeWord, default wake word "Computer" (offline, swappable to other openWakeWord models via `wake_word` in config or `--wake-word`; Porcupine remains a fallback if accuracy needs arise)
+- **Voice activity detection:** silero-vad ONNX model loaded via `onnxruntime` directly. *Why not the `silero-vad` PyPI package: it pulls full torch + CUDA wheels (~3 GB), unusable on a Pi 4; `onnxruntime` is ~50 MB with an aarch64 wheel.* Model file (~2 MB) downloaded on first use, cached under `~/.local/share/pi-card/`.
 - **Speech-to-text:** Faster-Whisper, `base` model with `int8` compute type (offline, multilingual — user specifies language)
 - **Text-to-speech:** Piper, voices `en_GB-jenny_dioco-medium` (EN) and `fr_FR-siwis-medium` (FR) (offline, fast on Pi 4; swappable to cloud TTS later)
 - **AI agent:** OpenAI-compatible API (user-configurable provider — see "AI Agent" below)
@@ -25,7 +26,7 @@ The active language can be switched mid-session via voice command (see `README.m
 
 ## AI Agent
 
-- **Interface** — accepts a list of messages (OpenAI chat-completions shape: `[{"role": ..., "content": ...}, ...]`) and returns a single assistant message.
+- **Interface** — `stream(messages) -> Iterator[str]`. Accepts OpenAI chat-completions shape, yields the reply as streamed text deltas. *Why streaming, not a single returned message: full-LLM-completion-before-any-speech dominates perceived latency on real hardware (Phase 5 listening gate).*
 - **System prompt** — "You are a concise voice assistant. Reply in 1–3 sentences unless asked for detail. Avoid markdown, lists, or code — your output is spoken aloud."
 - **Model choice** — prefer non-reasoning models (e.g. `gpt-4o-mini`-class). Reasoning/thinking-mode models add hundreds of milliseconds to seconds of hidden chain-of-thought per reply — acceptable for chat, prohibitive for conversation. When the deployed model only ships in thinking-capable form (e.g. Qwen3), disable thinking via the optional `extra_body` config field. The value is forwarded verbatim to the chat-completions request body, so any provider-specific knob fits — for Qwen3 served by vLLM the shape is `{chat_template_kwargs: {enable_thinking: false}}`. Omitting the field keeps today's behavior for non-thinking models.
 - **History within a conversation** — full message history retained until silence timeout or explicit exit, then cleared.
@@ -34,7 +35,7 @@ The active language can be switched mid-session via voice command (see `README.m
 ## Runtime Behavior
 
 - **Conversation mode** — Multi-turn. After each response, the mic stays open for follow-ups. Conversation ends on silence timeout (default: 8s, configurable) or explicit exit ("goodbye", "that's all"), returning to wake-word mode.
-- **Concurrency model** — v1: sequential pipeline (listen → transcribe → query → speak). v2 (next priority): stream AI response into TTS in sentence-sized chunks. Phase 5 ears-only gate confirmed the sequential pipeline feels noticeably sluggish — full LLM completion before any speech starts dominates perceived latency. Streaming is no longer optional.
+- **Concurrency model** — LLM deltas → sentence chunker (terminal-punct + whitespace, length floor) → Piper. Synth and playback are pipelined on a producer thread so inter-chunk gaps collapse to ~zero on a Pi 4. *Why a length floor in the chunker: prevents abbreviation fragments ("Mr.", "etc.") from emitting as standalone chunks.*
 - **Error handling & feedback:**
   - **Network / API failure** — Play spoken error cue ("I can't reach my brain right now"), flash LED red, return to wake-word mode. No silent retries.
   - **Low-confidence STT** — Ask "Sorry, could you repeat that?" and re-listen. Max retries configurable (default: 2), then audio error cue + red LED, return to wake-word mode.
