@@ -16,7 +16,7 @@ from pi_card.pipeline.capture import SilenceTimeout, Utterance, capture_utteranc
 from pi_card.pipeline.sentence_chunker import chunk_sentences
 from pi_card.pipeline.speech_detector import SpeechDetector
 from pi_card.pipeline.stt import WhisperSTT
-from pi_card.pipeline.tts import PiperTTS
+from pi_card.pipeline.tts import PiperTTS, TTSError
 
 SYSTEM_PROMPT = (
     "You are a concise voice assistant. Reply in 1\u20133 sentences unless asked for detail. "
@@ -85,13 +85,18 @@ class Conversation:
         return self._stream_reply_to_speech()
 
     def _stream_reply_to_speech(self) -> bool:
+        voice = self._tts_by_language[self._language]
         spoken_chunks: list[str] = []
+        self._leds.set_state(LEDState.OFF)
         try:
-            for chunk in chunk_sentences(self._agent.stream(self._history)):
-                if not self._speak(chunk, language=self._language):
-                    self._record_spoken_reply(spoken_chunks)
-                    return False
-                spoken_chunks.append(chunk)
+            chunks = chunk_sentences(self._agent.stream(self._history))
+            for spoken in voice.speak_stream(chunks, self._audio_out):
+                spoken_chunks.append(spoken)
+        except TTSError:
+            _logger.exception("TTS speak_stream failed (language=%s)", self._language)
+            self._record_spoken_reply(spoken_chunks)
+            self._play_error_tone()
+            return False
         except Exception:
             _logger.exception("agent stream failed")
             self._record_spoken_reply(spoken_chunks)
