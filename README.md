@@ -35,15 +35,20 @@ For a fresh Pi (Pi OS prereqs, ReSpeaker driver install, ALSA setup, headless se
 
 `~/.config/pi-card/config.yaml`. Required: `base_url`, `api_key`, `model`. See [`config.yaml.example`](config.yaml.example).
 
+## Voice commands
+
+| Intent | Say (EN) | Say (FR) |
+|---|---|---|
+| Switch language | "switch to French" | "parle anglais" |
+| End conversation | "goodbye", "that's all" | "au revoir", "c'est tout" |
+
 ## Documentation
 
 - [`Project_Overview.md`](Project_Overview.md) — design and architecture
-- [`Hardware_Interfaces.md`](Hardware_Interfaces.md) — production ABCs
-- [`Language_Switching.md`](Language_Switching.md) — mid-session language switch
-- [`Acceptance_Test_Rules.md`](Acceptance_Test_Rules.md) — test conventions
+- [`DEVELOPERS.md`](DEVELOPERS.md) — workflow, test conventions, listening protocol, extension points
 
 ## Development
 
-Python 3.11+, uv. Run tests with `./run-tests.sh`.
+Python 3.11+, uv. Run tests with `./run-tests.sh`. See [`DEVELOPERS.md`](DEVELOPERS.md).
 
 License: see [`LICENSE`](LICENSE).

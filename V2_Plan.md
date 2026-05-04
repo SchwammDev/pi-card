@@ -29,16 +29,6 @@ Order: **silero-vad first** (UX-blocking — device is hard to use without it), 
 
 3. **Disable model "thinking" via `extra_body` passthrough.** Originally deferred, but every model now available to the target deployment (Qwen3 via Aqueduct/TU Wien) is thinking-capable, and chain-of-thought latency makes voice unusable. Implemented as an optional `extra_body: dict` config field, forwarded verbatim to the chat-completions request body. Generic passthrough rather than a `reasoning_effort` enum because providers disagree on vocabulary (OpenAI's `reasoning_effort`, Anthropic's `thinking`, Qwen's `enable_thinking`) — encoding any single one in `Config` would leak provider into the schema.
 
-## Pi listening test protocol
-
-After any change to STT, agent streaming, sentence chunker, or TTS pipeline, run these three probes on a real Pi. Each is one wake → prompt → listen → "goodbye" cycle.
-
-| # | Prompt | Listen for |
-|---|---|---|
-| 1 | "Tell me a short story about a robot learning to garden." | First-word latency. Speech should start well before the LLM could plausibly have finished. |
-| 2 | "Describe what makes a good cup of coffee in three sentences." | Inter-chunk gaps (near zero with pipelined synth). Sentence boundaries make sense — no mid-word cuts, no abbreviation fragments. |
-| 3 | "What is two plus two?" | Short single-sentence reply still speaks end-to-end (chunker's end-flush path). |
-
 ## Follow-ups from first Pi listening test
 
 Streaming + pipelined synth shipped fine. New bottleneck: perceived gap between the THINKING LED and the first spoken word — TTFT plus chunker buffering plus first-chunk synth. Cheap wins:
