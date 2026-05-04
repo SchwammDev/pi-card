@@ -21,7 +21,10 @@ Order: **silero-vad first** (UX-blocking — device is hard to use without it), 
 - **State machine stays:** `capture_utterance`'s start-debounce / preroll / trailing-silence / max-duration logic is preserved. Only `_is_speech` is replaced; the detector is injected.
 - **Frame-size bridging:** audio frames are 1280 samples (80 ms), silero wants 512 samples (32 ms) — non-integer ratio. `SileroSpeechDetector` buffers samples internally, drains full 512-sample windows per call, aggregates per-window probabilities into one bool, holds the remainder for the next call. `reset()` flushes between utterances.
 
+## Forced into v2 by deployment reality
+
+3. **Disable model "thinking" via `extra_body` passthrough.** Originally deferred, but every model now available to the target deployment (Qwen3 via Aqueduct/TU Wien) is thinking-capable, and chain-of-thought latency makes voice unusable. Implemented as an optional `extra_body: dict` config field, forwarded verbatim to the chat-completions request body. Generic passthrough rather than a `reasoning_effort` enum because providers disagree on vocabulary (OpenAI's `reasoning_effort`, Anthropic's `thinking`, Qwen's `enable_thinking`) — encoding any single one in `Config` would leak provider into the schema.
+
 ## Out of scope for v2
 
 - Cross-conversation memory (deferred per `Project_Overview.md`).
-- `reasoning_effort` plumbing (deferred — add only when a deployment needs it).
