@@ -2,7 +2,7 @@
 
 ## Status
 
-All three items shipped. Sentence-chunker uses a minimum-viable splitter (terminal-punct + whitespace, 5-char floor) — accepted trade-off in `sentence_chunker.py`. Tighten only if real-Pi testing surfaces systematic mis-splits.
+First three items shipped. Two more added after a second listening test surfaced new bottlenecks (see "Forced into v2 by latency findings"): remote Aqueduct STT, then Piper first-synth. Sentence-chunker uses a minimum-viable splitter (terminal-punct + whitespace, 5-char floor) — accepted trade-off in `sentence_chunker.py`. Tighten only if real-Pi testing surfaces systematic mis-splits.
 
 ## What v1 hardware testing taught us
 
@@ -35,7 +35,37 @@ Streaming + pipelined synth shipped fine. New bottleneck: perceived gap between 
 
 1. ~~**Keep LED at THINKING until first audio plays.**~~ Shipped. `PiperTTS.speak_stream` now takes an `on_first_audio` callback; `Conversation` wires it to flip the LED only when the first chunk's audio is about to play.
 2. ~~**Lower sentence-chunker floor from 16 → 5 chars.**~~ Shipped. 5 still rejects "Mr." / "etc." but admits typical greetings. Accepted risk: occasional 4-char acronym (e.g. "U.S.") emits as a standalone chunk.
-3. **Verify Qwen `enable_thinking: false` is actually live in the deployed config.** TTFT is model-bound; a thinking-on Qwen3 inflates it dramatically. Config check, not code. Pending real-Pi confirmation.
+3. ~~**Verify Qwen `enable_thinking: false` is actually live in the deployed config.**~~ Confirmed. Logged at the SDK boundary on the Pi: `extra_body={'chat_template_kwargs': {'enable_thinking': False}}`. LLM TTFT measured at ~0.85 s, no chain-of-thought stall.
+
+## Findings from second listening test
+
+Instrumented THINKING with `pi_card.latency` markers. One real-Pi cycle, 5.4 s English prompt:
+
+| span | duration | share |
+|---|---|---|
+| Whisper STT | 6.0 s | 65% |
+| LLM TTFT | 0.85 s | 9% |
+| chunker buffering | 0.22 s | 2% |
+| Piper first synth | 2.14 s | 23% |
+
+LLM is fine. STT and Piper-first-synth dominate.
+
+Two hypotheses tested and dropped:
+
+- **Piper ONNX cold-start.** Warmup at startup saved ~130 ms — within noise. Reverted. Piper medium is just genuinely ~real-time on Pi 4.
+- **Streaming STT output via Aqueduct.** `whisper-large-v3-turbo` on `/audio/transcriptions` supports `stream=true`, but chat-completions can't accept a streaming user message — partial transcripts are unusable. Aqueduct does not expose `/realtime` (probed). Stick with non-streaming POST.
+
+## Forced into v2 by latency findings
+
+The original three v2 items shipped but didn't close the latency gap — second listening test still felt sluggish, instrumentation revealed STT and Piper-first-synth as the real bottlenecks. Two more items added to v2 to actually deliver the responsiveness goal:
+
+4. **Swap STT to remote Aqueduct `whisper-large-v3-turbo`.** ~0.3 s wall-clock for a 5 s utterance — **~19× faster than local `base/int8`**. Privacy holds: Aqueduct is on-prem at TU Wien.
+   - New `AqueductWhisperSTT` adapter, same `transcribe(pcm, language) -> text` contract as the local one.
+   - Config gains `stt: { provider: local | aqueduct, model: whisper-large }`. Default `local` to preserve current behavior for users without Aqueduct access.
+   - No fallback. Network failure surfaces via the existing network-error path (LLM call would fail next anyway).
+5. **Cut Piper first-chunk synth.** After STT lands and is verified on the Pi, attack the remaining ~2.1 s. Approach TBD — candidates: `medium → low` voice, comma-split chunker for the first chunk only, or a streaming Piper API if one exists.
+
+Projected THINKING budget after item 4: **~3.5 s** (down from 9.3 s). Item 5 trims further from there.
 
 ## Out of scope for v2
 

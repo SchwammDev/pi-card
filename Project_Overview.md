@@ -49,6 +49,7 @@ The active language can be switched mid-session via voice command (see `README.m
 - **Error log** — `~/.local/state/pi-card/logs/errors.log`. Always on.
 - **Conversation transcripts** — off by default. Enabled with `--debug-transcripts`, written to `~/.local/state/pi-card/logs/transcripts.log`.
 - **Audio retention** — never. Mic captures are processed in memory and discarded.
+- **Audio transit** — by default on-device only (offline STT). When the deployment uses an on-premise LLM/STT gateway (e.g. Aqueduct at TU Wien), audio may transit that gateway as part of remote STT, but does not leave the organisational boundary. Third-party cloud STT is not supported in v1/v2.
 - **Rotation** — Python `RotatingFileHandler`, 1 MB per file, keep last 5 (~5 MB cap per log).
 - **Format** — `%(asctime)s %(levelname)s %(name)s: %(message)s`.
 
