@@ -1,7 +1,7 @@
 from typing import Iterable, Iterator
 
 TERMINAL_PUNCTUATION = ".?!…"
-MIN_CHUNK_CHARS = 16
+MIN_CHUNK_CHARS = 5
 
 
 def chunk_sentences(deltas: Iterable[str]) -> Iterator[str]:

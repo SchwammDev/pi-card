@@ -49,6 +49,12 @@ def test_short_chunks_below_the_floor_are_held_back_so_abbreviations_do_not_frag
     assert chunks == ["Mr. Smith arrived at the meeting.", "Then he left."]
 
 
+def test_short_opening_greeting_is_emitted_without_waiting_for_a_follow_up_sentence():
+    chunks = _chunks("Hi there. ", "Welcome back.")
+
+    assert chunks == ["Hi there.", "Welcome back."]
+
+
 def test_an_empty_stream_yields_nothing():
     assert _chunks() == []
 
