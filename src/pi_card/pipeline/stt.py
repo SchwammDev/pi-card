@@ -5,6 +5,10 @@ SAMPLE_WIDTH_BYTES = 2
 _INT16_FULL_SCALE = 32_768.0
 
 
+class SpeechToText(Protocol):
+    def transcribe(self, pcm: bytes, language: str) -> str: ...
+
+
 class WhisperModel(Protocol):
     def transcribe(self, audio, language: str, **kwargs): ...
 

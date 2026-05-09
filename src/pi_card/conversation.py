@@ -17,7 +17,7 @@ from pi_card.messages import (
 from pi_card.pipeline.capture import SilenceTimeout, Utterance, capture_utterance
 from pi_card.pipeline.sentence_chunker import chunk_sentences
 from pi_card.pipeline.speech_detector import SpeechDetector
-from pi_card.pipeline.stt import WhisperSTT
+from pi_card.pipeline.stt import SpeechToText
 from pi_card.pipeline.tts import PiperTTS, TTSError
 
 SYSTEM_PROMPT = (
@@ -40,7 +40,7 @@ class Conversation:
         audio_out: AudioOutput,
         leds: LEDController,
         agent: AIAgent,
-        stt: WhisperSTT,
+        stt: SpeechToText,
         tts_by_language: dict[str, PiperTTS],
         speech_detector: SpeechDetector,
         initial_language: str,

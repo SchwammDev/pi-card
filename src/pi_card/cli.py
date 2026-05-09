@@ -6,7 +6,8 @@ from dataclasses import replace
 from pathlib import Path
 
 from pi_card.assistant import VoiceAssistant
-from pi_card.config import Config
+from pi_card.config import AQUEDUCT_STT_PROVIDER, Config
+from pi_card.pipeline.stt import SpeechToText
 from pi_card.pipeline.wake_word import SUPPORTED_WAKE_WORDS
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "pi-card" / "config.yaml"
@@ -155,7 +156,6 @@ def build_assistant(config: Config) -> VoiceAssistant:
     from pi_card.adapters.respeaker_leds import ReSpeakerLEDs
     from pi_card.adapters.usb_speaker import USBSpeakerOutput
     from pi_card.pipeline.speech_detector import load_silero_speech_detector
-    from pi_card.pipeline.stt import WhisperSTT, load_faster_whisper_model
     from pi_card.pipeline.tts import PiperTTS, load_piper_voice
     from pi_card.pipeline.wake_word import WakeWordDetector, load_openwakeword_engine
 
@@ -172,7 +172,7 @@ def build_assistant(config: Config) -> VoiceAssistant:
             engine=load_openwakeword_engine(model_name=config.wake_word),
             model_name=config.wake_word,
         ),
-        stt=WhisperSTT(model=load_faster_whisper_model(), initial_prompts=WHISPER_INITIAL_PROMPTS),
+        stt=_build_stt(config, client),
         tts_by_language={
             "en": PiperTTS(voice=load_piper_voice(EN_VOICE)),
             "fr": PiperTTS(voice=load_piper_voice(FR_VOICE)),
@@ -182,6 +182,20 @@ def build_assistant(config: Config) -> VoiceAssistant:
         silence_timeout=config.silence_timeout,
         max_stt_retries=config.max_stt_retries,
         min_silence_duration_ms=config.min_silence_duration_ms,
+    )
+
+
+def _build_stt(config: Config, client) -> SpeechToText:
+    if config.stt_provider == AQUEDUCT_STT_PROVIDER:
+        from pi_card.adapters.aqueduct_stt import AqueductWhisperSTT
+
+        return AqueductWhisperSTT(client=client, model=config.stt_model)
+
+    from pi_card.pipeline.stt import WhisperSTT, load_faster_whisper_model
+
+    return WhisperSTT(
+        model=load_faster_whisper_model(),
+        initial_prompts=WHISPER_INITIAL_PROMPTS,
     )
 
 

@@ -17,6 +17,13 @@ agent:
 # max_stt_retries: 2         # low-confidence STT retries before giving up.
 # wake_word: computer        # one of: computer, alexa, hey_jarvis, hey_mycroft, hey_rhasspy.
 
+# Speech-to-text. Defaults to local Faster-Whisper (offline). Switch to Aqueduct's
+# whisper-large-v3-turbo for ~19x faster transcription when an on-prem gateway is
+# available — privacy holds (audio stays inside the organisational boundary):
+# stt:
+#   provider: aqueduct        # one of: local, aqueduct
+#   model: whisper-large-v3-turbo
+
 # Provider-specific request body extensions, forwarded verbatim to the chat-completions
 # endpoint. Use this when the model needs a knob the standard schema doesn't expose —
 # e.g. disabling Qwen3's "thinking" mode for low voice latency:

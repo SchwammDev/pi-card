@@ -12,6 +12,10 @@ class ConfigError(ValueError):
 
 REQUIRED_AGENT_FIELDS = ("base_url", "api_key", "model")
 
+LOCAL_STT_PROVIDER = "local"
+AQUEDUCT_STT_PROVIDER = "aqueduct"
+SUPPORTED_STT_PROVIDERS = (LOCAL_STT_PROVIDER, AQUEDUCT_STT_PROVIDER)
+
 
 @dataclass(frozen=True)
 class Config:
@@ -24,6 +28,8 @@ class Config:
     wake_word: str = DEFAULT_WAKE_WORD
     min_silence_duration_ms: int = 2500
     extra_body: dict | None = None
+    stt_provider: str = LOCAL_STT_PROVIDER
+    stt_model: str | None = None
 
     @classmethod
     def load(cls, path: str | Path) -> "Config":
@@ -62,6 +68,8 @@ class Config:
                 f"Config file {path} has 'extra_body' but it is not a YAML mapping"
             )
 
+        stt_provider, stt_model = _parse_stt_section(raw.get("stt"), path)
+
         return cls(
             base_url=agent["base_url"],
             api_key=agent["api_key"],
@@ -74,4 +82,32 @@ class Config:
                 raw.get("min_silence_duration_ms", cls.min_silence_duration_ms)
             ),
             extra_body=extra_body,
+            stt_provider=stt_provider,
+            stt_model=stt_model,
         )
+
+
+def _parse_stt_section(raw_stt, path: Path) -> tuple[str, str | None]:
+    if raw_stt is None:
+        return LOCAL_STT_PROVIDER, None
+    if not isinstance(raw_stt, dict):
+        raise ConfigError(
+            f"Config file {path} has 'stt' but it is not a YAML mapping"
+        )
+
+    provider = raw_stt.get("provider", LOCAL_STT_PROVIDER)
+    if provider not in SUPPORTED_STT_PROVIDERS:
+        supported = ", ".join(SUPPORTED_STT_PROVIDERS)
+        raise ConfigError(
+            f"Config file {path} sets stt.provider={provider!r}; "
+            f"supported values: {supported}"
+        )
+
+    model = raw_stt.get("model")
+    if provider == AQUEDUCT_STT_PROVIDER and not model:
+        raise ConfigError(
+            f"Config file {path} sets stt.provider=aqueduct but is missing stt.model "
+            f"(e.g. whisper-large-v3-turbo)"
+        )
+
+    return provider, model

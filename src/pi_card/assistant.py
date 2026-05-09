@@ -7,7 +7,7 @@ from pi_card.hardware.audio_input import AudioInput
 from pi_card.hardware.audio_output import AudioOutput
 from pi_card.hardware.leds import LEDController, LEDState
 from pi_card.pipeline.speech_detector import SpeechDetector
-from pi_card.pipeline.stt import WhisperSTT
+from pi_card.pipeline.stt import SpeechToText
 from pi_card.pipeline.tts import PiperTTS
 from pi_card.pipeline.wake_word import WakeWordDetector
 
@@ -25,7 +25,7 @@ class VoiceAssistant:
         leds: LEDController,
         agent: AIAgent,
         wake_word_detector: WakeWordDetector,
-        stt: WhisperSTT,
+        stt: SpeechToText,
         tts_by_language: dict[str, PiperTTS],
         speech_detector: SpeechDetector,
         language: str = "en",

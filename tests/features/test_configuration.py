@@ -173,6 +173,48 @@ def test_config_loads_extra_body_passthrough_for_provider_specific_params(tmp_pa
     assert config.extra_body == {"chat_template_kwargs": {"enable_thinking": False}}
 
 
+def _load_with_stt(tmp_path, **stt_fields) -> Config:
+    body = yaml.safe_dump(
+        {
+            "agent": {
+                "base_url": "https://api.example.com/v1",
+                "api_key": "secret",
+                "model": "gpt-4o-mini",
+            },
+            "stt": stt_fields,
+        }
+    )
+    path = tmp_path / "config.yaml"
+    path.write_text(body)
+    return Config.load(path)
+
+
+def test_config_stt_provider_defaults_to_local_so_offline_setups_keep_working(tmp_path):
+    config = _load_with_overrides(tmp_path)
+
+    assert config.stt_provider == "local"
+
+
+def test_config_loads_aqueduct_stt_provider_with_remote_whisper_model(tmp_path):
+    config = _load_with_stt(tmp_path, provider="aqueduct", model="whisper-large-v3-turbo")
+
+    assert (config.stt_provider, config.stt_model) == ("aqueduct", "whisper-large-v3-turbo")
+
+
+def test_config_rejects_unknown_stt_provider(tmp_path):
+    with pytest.raises(ConfigError) as excinfo:
+        _load_with_stt(tmp_path, provider="cloud-magic")
+
+    assert "cloud-magic" in str(excinfo.value)
+
+
+def test_config_aqueduct_stt_requires_a_model_name(tmp_path):
+    with pytest.raises(ConfigError) as excinfo:
+        _load_with_stt(tmp_path, provider="aqueduct")
+
+    assert "model" in str(excinfo.value)
+
+
 def test_config_fails_fast_when_file_does_not_exist(tmp_path):
     with pytest.raises(ConfigError) as excinfo:
         Config.load(tmp_path / "does-not-exist.yaml")
