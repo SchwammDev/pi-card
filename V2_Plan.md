@@ -64,10 +64,11 @@ The original three v2 items shipped but didn't close the latency gap — second 
    - ~~Config gains `stt: { provider: local | aqueduct, model: whisper-large }`. Default `local` to preserve current behavior for users without Aqueduct access.~~ Shipped.
    - No fallback. Network failure surfaces via the existing network-error path (LLM call would fail next anyway).
 5. **Cut Piper first-chunk synth.** Third listening test (below) confirmed the gap scales with first-sentence length, not cold start (0.6 s for "Four." vs 2.8 s for a long opening sentence). The chunker→first-audio gap *is* the synth time for sentence #1.
-   - **Streaming Piper ruled out by measurement.** `scripts/measure_piper_chunks.py` on the Pi: 192-char sentence yielded **one** chunk after 4.21 s of synth (12.6 s of audio); 5-char sentence yielded **one** chunk after 0.18 s. Piper's `synthesize()` is sentence-level, not sub-sentence. The `b"".join(...)` in `tts.py:159` discards nothing.
+   - ~~**Streaming Piper.**~~ Ruled out by measurement — `scripts/measure_piper_chunks.py` on the Pi: 192-char sentence yielded **one** chunk after 4.21 s of synth (12.6 s of audio); 5-char sentence yielded **one** chunk after 0.18 s. Piper's VITS-based `synthesize()` is sentence-level — within one sentence the model does a single forward pass and yields one `AudioChunk` only when it's complete (`piper/voice.py:269-303`). No sub-sentence streaming exists in this architecture; the `b"".join(...)` in `tts.py:159` discards nothing.
    - **Useful side-finding: Piper runs at ~3× real-time on the Pi 4** (4.21 s synth → 12.6 s audio; 0.18 s → 0.48 s). Once the pipeline is full, gaps stay zero. The bottleneck is purely sentence #1.
-   - **Leading candidate now: comma-split chunker for the *first* chunk only.** Sub-sentence streaming we *can* implement — feed Piper a shorter chunk #1, let the producer/consumer pipeline catch up while it plays. Subsequent chunks stay terminal-punct so prosody isn't shredded. 5-char floor preserved. Estimated win on cycle 1's "Once upon a time, ..." opening: 17-char first comma → ~0.4 s synth, replacing 2.8 s. Cycle-1 THINKING projects from 4.3 s to ~1.9 s.
-   - Last resort: `medium → low` voice. Quality cost; only if comma-split can't get long openings under ~1.0 s (e.g. sentences without an early comma).
+   - ~~**Comma-split chunker for the first chunk only.**~~ Shipped (`pipeline/sentence_chunker.py`). When `first_chunk_pending` is true, splits also accept `,` + whitespace (still respecting the 5-char floor); flips off after the first emit so subsequent prosody stays natural. Cycle-2 listening test win: −1.36 s on a coffee-recipe opening with an early comma. No effect on no-comma openings (cycle 1, response-dependent) or on already-short openings (cycle 3).
+   - ~~**Aqueduct hosted TTS (Kokoro).**~~ Tested, not pursued. Aqueduct exposes `kokoro` (EN) and `piper-thorsen` (DE only — useless for our EN+FR). Kokoro probe (`scripts/probe_aqueduct_tts.py`): 3.59–3.75 s TTFB for a 192-char sentence, 0.43–0.46 s for "Four." — same ~3× real-time ratio as local Piper, with TTFB ≈ total wall on every call (server is non-streaming regardless of `response_format=wav` or `pcm`). Net: marginal gain on long sentences, regression on short ones, plus network dependency. Fidelity roughly comparable to local Piper. Lane re-opens only if TU Wien enables a streaming server.
+   - **Status: partial ship.** Comma-split is in. Cycle-1 no-comma case still hits ~3 s of Piper synth — not closed. The architectural cap is that VITS-style models do one forward pass per sentence; the only way to start audio sooner without comma-split is to swap to a TTS architecture that streams audio progressively during decoding. **Investigation is the remaining half of this item** — see "Streaming TTS investigation" below.
 
 Projected THINKING budget after item 4: **~3.5 s** (down from 9.3 s). Item 5 trims further from there.
 
@@ -86,6 +87,19 @@ Three cycles on the Pi against Aqueduct `whisper-large-v3-turbo` + `qwen-3.6-35b
 - **Piper first-chunk synth is the only remaining bottleneck.** The chunker→first-audio gap scales with first-chunk text length (0.6 s for a short greeting, ~2.8 s for a long opening sentence). Earlier "warmup saved only ~130 ms" finding still holds — what we're seeing now isn't cold start, it's synth time tracking sentence length.
 
 This reframes item 5: the leverage is on **shortening the first chunk**, not on warming Piper or finding a streaming API.
+
+## Streaming TTS investigation (remainder of item 5)
+
+Comma-split shipped, but the cycle-1 no-comma case still hits ~3 s of Piper synth before first audio. The architectural cap is **VITS-style models do one forward pass per sentence** — the only way to start audio sooner is either (a) shorten the input passed to one synth call (comma-split, already shipped) or (b) swap to a TTS architecture that streams audio progressively during decoding.
+
+Candidates worth probing in a follow-up investigation:
+
+- **XTTS-v2 (Coqui).** Exposes a documented streaming inference API (`tts.tts_stream(...)`) yielding audio chunks during decoding. Larger model — needs verification whether it runs usefully on Pi 4 CPU or whether self-hosting on a faster machine is required.
+- **Streaming-VITS forks.** Research forks (e.g., chunked-decoder VITS variants) that yield audio progressively. Untested on Pi, mainline status unclear.
+- **Self-hosted Kokoro with a streaming front-end.** Kokoro itself isn't streaming, but a thin server wrapper that decomposes input by sentence and writes the response with `Transfer-Encoding: chunked` would enable network-side streaming. Server complexity, but reuses a model whose fidelity we've already heard.
+- **OpenAI Realtime / gpt-realtime / Gemini Live.** End-to-end audio. Out of scope until TU Wien hosts an audio-capable LLM behind Aqueduct (privacy constraint).
+
+Pre-investigation step before any code: measurement, same approach as the Piper chunk and Aqueduct probes — survey what's available, time TTFA on the Pi or representative hardware, listen for fidelity. Decide architecture only after numbers.
 
 ## Out of scope for v2
 
