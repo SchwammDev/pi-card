@@ -60,8 +60,8 @@ Two hypotheses tested and dropped:
 The original three v2 items shipped but didn't close the latency gap — second listening test still felt sluggish, instrumentation revealed STT and Piper-first-synth as the real bottlenecks. Two more items added to v2 to actually deliver the responsiveness goal:
 
 4. **Swap STT to remote Aqueduct `whisper-large-v3-turbo`.** ~0.3 s wall-clock for a 5 s utterance — **~19× faster than local `base/int8`**. Privacy holds: Aqueduct is on-prem at TU Wien.
-   - New `AqueductWhisperSTT` adapter, same `transcribe(pcm, language) -> text` contract as the local one.
-   - Config gains `stt: { provider: local | aqueduct, model: whisper-large }`. Default `local` to preserve current behavior for users without Aqueduct access.
+   - ~~New `AqueductWhisperSTT` adapter, same `transcribe(pcm, language) -> text` contract as the local one.~~ Shipped. Lives at `adapters/aqueduct_stt.py`; both adapters now satisfy a `SpeechToText` Protocol in `pipeline/stt.py`. Reuses the LLM `OpenAI` client (Aqueduct hosts both endpoints under the same `base_url` + `api_key`); wraps int16 PCM into an in-memory WAV before upload. No `prompt` field forwarded for now — `whisper-large-v3-turbo` shouldn't need the hallucination-prevention prompt the local `base/int8` did. Revisit if real-Pi testing surfaces hallucinations.
+   - ~~Config gains `stt: { provider: local | aqueduct, model: whisper-large }`. Default `local` to preserve current behavior for users without Aqueduct access.~~ Shipped.
    - No fallback. Network failure surfaces via the existing network-error path (LLM call would fail next anyway).
 5. **Cut Piper first-chunk synth.** After STT lands and is verified on the Pi, attack the remaining ~2.1 s. Approach TBD — candidates: `medium → low` voice, comma-split chunker for the first chunk only, or a streaming Piper API if one exists.
 
