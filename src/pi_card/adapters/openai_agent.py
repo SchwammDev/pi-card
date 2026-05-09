@@ -1,6 +1,9 @@
+import logging
 from typing import Iterator, Protocol
 
 from pi_card.hardware.ai_agent import AIAgent, Message
+
+_latency = logging.getLogger("pi_card.latency")
 
 
 class _ChatCompletions(Protocol):
@@ -45,6 +48,9 @@ class OpenAIAgent(AIAgent):
         if self._extra_body is not None:
             kwargs["extra_body"] = self._extra_body
 
+        _latency.info(
+            "agent_call model=%s extra_body=%r", self._model, self._extra_body
+        )
         for event in self._client.chat.completions.create(**kwargs):
             content = getattr(event.choices[0].delta, "content", None)
             if content:

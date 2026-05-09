@@ -119,6 +119,14 @@ def configure_logging(
         transcripts.setLevel(logging.WARNING)
         transcripts.propagate = False
 
+    latency = logging.getLogger("pi_card.latency")
+    _remove_stderr_stream_handlers(latency)
+    latency.setLevel(logging.INFO)
+    latency.propagate = False
+    latency_handler = logging.StreamHandler(sys.stderr)
+    latency_handler.setFormatter(formatter)
+    latency.addHandler(latency_handler)
+
 
 def _remove_rotating_file_handlers(logger: logging.Logger) -> None:
     for handler in list(logger.handlers):

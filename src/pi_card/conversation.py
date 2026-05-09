@@ -1,4 +1,6 @@
 import logging
+import time
+from typing import Iterable, Iterator
 
 from pi_card.audio_tones import error_tone
 from pi_card.hardware.ai_agent import AIAgent, Message
@@ -25,6 +27,7 @@ SYSTEM_PROMPT = (
 
 _logger = logging.getLogger(__name__)
 _transcripts = logging.getLogger("pi_card.transcripts")
+_latency = logging.getLogger("pi_card.latency")
 
 
 class Conversation:
@@ -87,12 +90,19 @@ class Conversation:
     def _stream_reply_to_speech(self) -> bool:
         voice = self._tts_by_language[self._language]
         spoken_chunks: list[str] = []
+        t0 = self._t_thinking_on
+
+        def _on_first_audio() -> None:
+            _latency.info("first_audio +%.3fs", time.perf_counter() - t0)
+            self._leds.set_state(LEDState.OFF)
+
         try:
-            chunks = chunk_sentences(self._agent.stream(self._history))
+            deltas = _log_first(self._agent.stream(self._history), "first_token", t0)
+            chunks = _log_first(chunk_sentences(deltas), "first_chunk", t0)
             for spoken in voice.speak_stream(
                 chunks,
                 self._audio_out,
-                on_first_audio=lambda: self._leds.set_state(LEDState.OFF),
+                on_first_audio=_on_first_audio,
             ):
                 spoken_chunks.append(spoken)
         except TTSError:
@@ -136,8 +146,10 @@ class Conversation:
 
             assert isinstance(result, Utterance)
             self._leds.set_state(LEDState.THINKING)
+            self._t_thinking_on = time.perf_counter()
             text = self._stt.transcribe(result.pcm, language=self._language)
             if text:
+                _latency.info("stt_done +%.3fs", time.perf_counter() - self._t_thinking_on)
                 return text
 
             if attempt < self._max_stt_retries:
@@ -173,3 +185,12 @@ class Conversation:
     def _play_error_tone(self) -> None:
         self._leds.set_state(LEDState.ERROR)
         self._audio_out.play(error_tone())
+
+
+def _log_first(items: Iterable[str], label: str, t0: float) -> Iterator[str]:
+    seen = False
+    for item in items:
+        if not seen:
+            _latency.info("%s +%.3fs", label, time.perf_counter() - t0)
+            seen = True
+        yield item
