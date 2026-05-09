@@ -63,9 +63,28 @@ The original three v2 items shipped but didn't close the latency gap — second 
    - ~~New `AqueductWhisperSTT` adapter, same `transcribe(pcm, language) -> text` contract as the local one.~~ Shipped. Lives at `adapters/aqueduct_stt.py`; both adapters now satisfy a `SpeechToText` Protocol in `pipeline/stt.py`. Reuses the LLM `OpenAI` client (Aqueduct hosts both endpoints under the same `base_url` + `api_key`); wraps int16 PCM into an in-memory WAV before upload. No `prompt` field forwarded for now — `whisper-large-v3-turbo` shouldn't need the hallucination-prevention prompt the local `base/int8` did. Revisit if real-Pi testing surfaces hallucinations.
    - ~~Config gains `stt: { provider: local | aqueduct, model: whisper-large }`. Default `local` to preserve current behavior for users without Aqueduct access.~~ Shipped.
    - No fallback. Network failure surfaces via the existing network-error path (LLM call would fail next anyway).
-5. **Cut Piper first-chunk synth.** After STT lands and is verified on the Pi, attack the remaining ~2.1 s. Approach TBD — candidates: `medium → low` voice, comma-split chunker for the first chunk only, or a streaming Piper API if one exists.
+5. **Cut Piper first-chunk synth.** Third listening test (below) confirmed the gap scales with first-sentence length, not cold start (0.6 s for "Four." vs 2.8 s for a long opening sentence). The chunker→first-audio gap *is* the synth time for sentence #1.
+   - **Leading candidate: stream Piper's already-chunked output through to playback.** `tts.py:158-160` shows the production `PiperVoice` adapter already iterates over `real.synthesize(text)` chunks — and then materializes them with `b"".join(...)` before returning. If Piper's chunk iteration is sub-sentence (yields audio progressively during inference), reverting that join collapses first-audio latency to ~one-chunk's worth of synth, regardless of sentence length. Step 1 before any code: instrument `real.synthesize(text)` on the Pi for a long sentence — log per-chunk arrival timestamps and chunk durations. Sub-sentence cadence → ship streaming. Single-yield-per-sentence → fall through to the next candidates.
+   - Fallback: comma-split chunker for the *first* chunk only — cheap and targeted, but only helps sentences with an early comma.
+   - Last resort: `medium → low` voice. Quality cost; only if the above don't get long-opening synth under ~1.0 s.
 
 Projected THINKING budget after item 4: **~3.5 s** (down from 9.3 s). Item 5 trims further from there.
+
+## Findings from third listening test (after item 4)
+
+Three cycles on the Pi against Aqueduct `whisper-large-v3-turbo` + `qwen-3.6-35b`:
+
+| cycle | utterance | stt_done | LLM TTFT | chunker→first audio (Piper) | THINKING total |
+|---|---|---|---|---|---|
+| 1 | long story prompt | 1.07 s | +0.20 s | +2.80 s | **4.28 s** |
+| 2 | medium prompt | 0.31 s | +0.24 s | +2.12 s | **2.91 s** |
+| 3 | "two plus two" | 0.26 s | +0.19 s | +0.60 s | **1.14 s** |
+
+- **STT goal hit** for typical utterances: 0.26–0.31 s, matching the ~19× projection. Cycle 1's 1.07 s scales with audio length (and may include first-call TLS handshake) — not worth chasing yet.
+- **Projection beaten on cycles 2 and 3** (2.9 s and 1.1 s vs projected ~3.5 s). Cycle 1 misses because of Piper, not Whisper.
+- **Piper first-chunk synth is the only remaining bottleneck.** The chunker→first-audio gap scales with first-chunk text length (0.6 s for a short greeting, ~2.8 s for a long opening sentence). Earlier "warmup saved only ~130 ms" finding still holds — what we're seeing now isn't cold start, it's synth time tracking sentence length.
+
+This reframes item 5: the leverage is on **shortening the first chunk**, not on warming Piper or finding a streaming API.
 
 ## Out of scope for v2
 
