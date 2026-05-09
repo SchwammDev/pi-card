@@ -145,21 +145,6 @@ def test_on_first_audio_callback_fires_exactly_once_just_before_the_first_play()
     assert events == ["first-audio", "play", "play"]
 
 
-def test_warmup_runs_one_synthesis_to_prime_the_voice():
-    voice = _TrackingVoice()
-    tts = PiperTTS(voice=voice)
-
-    tts.warmup()
-
-    assert len(voice.synthesized) == 1
-
-
-def test_warmup_swallows_voice_errors_so_startup_continues():
-    tts = PiperTTS(voice=_ExplodingVoice())
-
-    tts.warmup()
-
-
 def test_on_first_audio_callback_is_not_invoked_when_no_audio_is_produced():
     events = _record_speak_events(iter([]))
 

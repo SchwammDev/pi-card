@@ -1,4 +1,3 @@
-import logging
 import queue
 import threading
 from pathlib import Path
@@ -8,9 +7,6 @@ from pi_card.hardware.audio_output import AudioOutput
 
 TARGET_SAMPLE_RATE_HZ = 16_000
 DEFAULT_VOICE_DIR = Path.home() / ".local/share/pi-card/voices"
-WARMUP_TEXT = "."
-
-_logger = logging.getLogger(__name__)
 
 
 class TTSError(Exception):
@@ -29,12 +25,6 @@ class PiperTTS:
 
     def __init__(self, *, voice: PiperVoice):
         self._voice = voice
-
-    def warmup(self) -> None:
-        try:
-            self._voice.synthesize(WARMUP_TEXT)
-        except Exception:
-            _logger.exception("piper voice warmup failed")
 
     def speak(self, text: str, sink: AudioOutput) -> None:
         if not text:
