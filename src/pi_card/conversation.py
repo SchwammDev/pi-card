@@ -87,10 +87,13 @@ class Conversation:
     def _stream_reply_to_speech(self) -> bool:
         voice = self._tts_by_language[self._language]
         spoken_chunks: list[str] = []
-        self._leds.set_state(LEDState.OFF)
         try:
             chunks = chunk_sentences(self._agent.stream(self._history))
-            for spoken in voice.speak_stream(chunks, self._audio_out):
+            for spoken in voice.speak_stream(
+                chunks,
+                self._audio_out,
+                on_first_audio=lambda: self._leds.set_state(LEDState.OFF),
+            ):
                 spoken_chunks.append(spoken)
         except TTSError:
             _logger.exception("TTS speak_stream failed (language=%s)", self._language)

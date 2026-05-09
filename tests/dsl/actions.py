@@ -75,6 +75,20 @@ def tts_will_fail(world: World, *, language: str, exception: Exception) -> None:
     voice.synthesize = _failing_synthesize  # type: ignore[method-assign]
 
 
+def capture_led_state_at_first_synth(world: World, *, language: str) -> list:
+    captured: list = []
+    voice = world.voices[language]
+    original_synthesize = voice.synthesize
+
+    def _snapshot_then_synth(text):
+        if not captured:
+            captured.append(world.leds.current)
+        return original_synthesize(text)
+
+    voice.synthesize = _snapshot_then_synth  # type: ignore[method-assign]
+    return captured
+
+
 def run_until_exhausted(world: World) -> None:
     """Run the assistant until the fake audio stream is empty."""
     try:

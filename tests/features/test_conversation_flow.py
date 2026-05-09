@@ -3,6 +3,7 @@ from pi_card.hardware.leds import LEDState
 from tests.dsl.actions import (
     assistant_will_reply,
     assistant_will_stream_reply,
+    capture_led_state_at_first_synth,
     run_until_exhausted,
     trigger_wake_word,
     user_says,
@@ -105,6 +106,17 @@ def test_history_is_reset_between_conversations(world):
     assert_agent_was_called(world, times=2)
     # Second conversation's first call should be fresh (system + user only).
     assert_conversation_started_fresh_at_call(world, call_index=1)
+
+
+def test_led_stays_thinking_until_first_audio_plays(world):
+    trigger_wake_word(world)
+    user_says(world, "Hello", language="en")
+    assistant_will_reply(world, "Hi.")
+    led_at_first_synth = capture_led_state_at_first_synth(world, language="en")
+
+    run_until_exhausted(world)
+
+    assert led_at_first_synth == [LEDState.THINKING]
 
 
 def test_led_cycle_for_a_single_turn(world):

@@ -120,3 +120,32 @@ def test_source_iterator_errors_propagate_unchanged_so_callers_can_distinguish_t
 
     with pytest.raises(_Boom):
         list(tts.speak_stream(_angry_source(), _ImmediateSink()))
+
+
+class _RecordingSink:
+    def __init__(self, log: list[str]):
+        self._log = log
+
+    def play(self, pcm: bytes) -> None:
+        self._log.append("play")
+
+
+def _record_speak_events(texts) -> list[str]:
+    events: list[str] = []
+    list(PiperTTS(voice=_TrackingVoice()).speak_stream(
+        texts, _RecordingSink(events),
+        on_first_audio=lambda: events.append("first-audio"),
+    ))
+    return events
+
+
+def test_on_first_audio_callback_fires_exactly_once_just_before_the_first_play():
+    events = _record_speak_events(_two_long_sentences())
+
+    assert events == ["first-audio", "play", "play"]
+
+
+def test_on_first_audio_callback_is_not_invoked_when_no_audio_is_produced():
+    events = _record_speak_events(iter([]))
+
+    assert events == []

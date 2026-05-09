@@ -1,7 +1,7 @@
 import queue
 import threading
 from pathlib import Path
-from typing import Iterable, Iterator, Protocol
+from typing import Callable, Iterable, Iterator, Protocol
 
 from pi_card.hardware.audio_output import AudioOutput
 
@@ -34,7 +34,10 @@ class PiperTTS:
         sink.play(_resample_to_target(pcm, self._voice.sample_rate))
 
     def speak_stream(
-        self, texts: Iterable[str], sink: AudioOutput
+        self,
+        texts: Iterable[str],
+        sink: AudioOutput,
+        on_first_audio: Callable[[], None] | None = None,
     ) -> Iterator[str]:
         audio_queue: queue.Queue = queue.Queue(maxsize=1)
         stop = threading.Event()
@@ -47,7 +50,7 @@ class PiperTTS:
         producer.start()
 
         try:
-            yield from _drain_queue_into_sink(audio_queue, sink)
+            yield from _drain_queue_into_sink(audio_queue, sink, on_first_audio)
         finally:
             stop.set()
             _drain_remaining(audio_queue)
@@ -88,7 +91,8 @@ def _put_until_stopped(audio_queue, item, stop) -> bool:
     return False
 
 
-def _drain_queue_into_sink(audio_queue, sink) -> Iterator[str]:
+def _drain_queue_into_sink(audio_queue, sink, on_first_audio) -> Iterator[str]:
+    first_audio_pending = on_first_audio is not None
     while True:
         kind, payload, audio = audio_queue.get()
         if kind == "done":
@@ -97,6 +101,9 @@ def _drain_queue_into_sink(audio_queue, sink) -> Iterator[str]:
             raise TTSError(str(payload)) from payload
         if kind == "source_error":
             raise payload
+        if first_audio_pending:
+            on_first_audio()
+            first_audio_pending = False
         try:
             sink.play(audio)
         except Exception as exc:
