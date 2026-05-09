@@ -2,7 +2,7 @@
 
 ## Status
 
-All three items shipped. Sentence-chunker uses a minimum-viable splitter (terminal-punct + whitespace, 16-char floor) — accepted trade-off in `sentence_chunker.py`. Tighten only if real-Pi testing surfaces systematic mis-splits.
+All three items shipped. Sentence-chunker uses a minimum-viable splitter (terminal-punct + whitespace, 5-char floor) — accepted trade-off in `sentence_chunker.py`. Tighten only if real-Pi testing surfaces systematic mis-splits.
 
 ## What v1 hardware testing taught us
 
@@ -33,9 +33,9 @@ Order: **silero-vad first** (UX-blocking — device is hard to use without it), 
 
 Streaming + pipelined synth shipped fine. New bottleneck: perceived gap between the THINKING LED and the first spoken word — TTFT plus chunker buffering plus first-chunk synth. Cheap wins:
 
-1. **Keep LED at THINKING until first audio plays.** Today it flips OFF at the top of `_stream_reply_to_speech`, leaving the user with no feedback through the entire wait. Wire an `on_first_audio` callback into `PiperTTS.speak_stream` and move the LED transition there.
-2. **Lower sentence-chunker floor from 16 → 5 chars.** Floor of 16 glues short opening sentences ("Hi there." waits for a longer follow-up). 5 still rejects "Mr." / "etc." but admits typical greetings. Accepted risk: occasional 4-char acronym (e.g. "U.S.") emits as a standalone chunk.
-3. **Verify Qwen `enable_thinking: false` is actually live in the deployed config.** TTFT is model-bound; a thinking-on Qwen3 inflates it dramatically. Config check, not code.
+1. ~~**Keep LED at THINKING until first audio plays.**~~ Shipped. `PiperTTS.speak_stream` now takes an `on_first_audio` callback; `Conversation` wires it to flip the LED only when the first chunk's audio is about to play.
+2. ~~**Lower sentence-chunker floor from 16 → 5 chars.**~~ Shipped. 5 still rejects "Mr." / "etc." but admits typical greetings. Accepted risk: occasional 4-char acronym (e.g. "U.S.") emits as a standalone chunk.
+3. **Verify Qwen `enable_thinking: false` is actually live in the deployed config.** TTFT is model-bound; a thinking-on Qwen3 inflates it dramatically. Config check, not code. Pending real-Pi confirmation.
 
 ## Out of scope for v2
 
