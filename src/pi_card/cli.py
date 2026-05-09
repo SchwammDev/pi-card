@@ -161,6 +161,13 @@ def build_assistant(config: Config) -> VoiceAssistant:
 
     client = load_openai_client(base_url=config.base_url, api_key=config.api_key)
 
+    tts_by_language = {
+        "en": PiperTTS(voice=load_piper_voice(EN_VOICE)),
+        "fr": PiperTTS(voice=load_piper_voice(FR_VOICE)),
+    }
+    for tts in tts_by_language.values():
+        tts.warmup()
+
     return VoiceAssistant(
         audio_in=ReSpeakerInput(),
         audio_out=USBSpeakerOutput(),
@@ -173,10 +180,7 @@ def build_assistant(config: Config) -> VoiceAssistant:
             model_name=config.wake_word,
         ),
         stt=WhisperSTT(model=load_faster_whisper_model(), initial_prompts=WHISPER_INITIAL_PROMPTS),
-        tts_by_language={
-            "en": PiperTTS(voice=load_piper_voice(EN_VOICE)),
-            "fr": PiperTTS(voice=load_piper_voice(FR_VOICE)),
-        },
+        tts_by_language=tts_by_language,
         speech_detector=load_silero_speech_detector(),
         language=config.language,
         silence_timeout=config.silence_timeout,
