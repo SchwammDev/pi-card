@@ -68,7 +68,8 @@ The original three v2 items shipped but didn't close the latency gap — second 
    - **Useful side-finding: Piper runs at ~3× real-time on the Pi 4** (4.21 s synth → 12.6 s audio; 0.18 s → 0.48 s). Once the pipeline is full, gaps stay zero. The bottleneck is purely sentence #1.
    - ~~**Comma-split chunker for the first chunk only.**~~ Shipped (`pipeline/sentence_chunker.py`). When `first_chunk_pending` is true, splits also accept `,` + whitespace (still respecting the 5-char floor); flips off after the first emit so subsequent prosody stays natural. Cycle-2 listening test win: −1.36 s on a coffee-recipe opening with an early comma. No effect on no-comma openings (cycle 1, response-dependent) or on already-short openings (cycle 3).
    - ~~**Aqueduct hosted TTS (Kokoro).**~~ Tested, not pursued. Aqueduct exposes `kokoro` (EN) and `piper-thorsen` (DE only — useless for our EN+FR). Kokoro probe (`scripts/probe_aqueduct_tts.py`): 3.59–3.75 s TTFB for a 192-char sentence, 0.43–0.46 s for "Four." — same ~3× real-time ratio as local Piper, with TTFB ≈ total wall on every call (server is non-streaming regardless of `response_format=wav` or `pcm`). Net: marginal gain on long sentences, regression on short ones, plus network dependency. Fidelity roughly comparable to local Piper. Lane re-opens only if TU Wien enables a streaming server.
-   - **Status: partial ship.** Comma-split is in. Cycle-1 no-comma case still hits ~3 s of Piper synth — not closed. The architectural cap is that VITS-style models do one forward pass per sentence; the only way to start audio sooner without comma-split is to swap to a TTS architecture that streams audio progressively during decoding. **Investigation is the remaining half of this item** — see "Streaming TTS investigation" below.
+   - ~~**On-Pi streaming TTS architecture swap.**~~ Investigated, no viable candidate on Pi 4 CPU. See "Streaming TTS investigation" below for the survey and the negative measurement.
+   - **Status: closed.** Comma-split is the v2 ship for item 5. Cycle-1 no-comma openings remain at ~3 s of Piper synth as a known v2 limitation — accepted. Streaming-TTS lanes that need server-hosted hardware (XTTS-v2 self-hosted, NeuTTS Air on x86, Aqueduct streaming Kokoro) are documented for future work but explicitly out of scope for v2.
 
 Projected THINKING budget after item 4: **~3.5 s** (down from 9.3 s). Item 5 trims further from there.
 
@@ -88,18 +89,27 @@ Three cycles on the Pi against Aqueduct `whisper-large-v3-turbo` + `qwen-3.6-35b
 
 This reframes item 5: the leverage is on **shortening the first chunk**, not on warming Piper or finding a streaming API.
 
-## Streaming TTS investigation (remainder of item 5)
+## Streaming TTS investigation (closed, no v2 ship)
 
-Comma-split shipped, but the cycle-1 no-comma case still hits ~3 s of Piper synth before first audio. The architectural cap is **VITS-style models do one forward pass per sentence** — the only way to start audio sooner is either (a) shorten the input passed to one synth call (comma-split, already shipped) or (b) swap to a TTS architecture that streams audio progressively during decoding.
+Cycle-1 no-comma openings still hit ~3 s of Piper synth. The cap: VITS-family models do one forward pass per sentence; sub-sentence streaming needs a different architecture.
 
-Candidates worth probing in a follow-up investigation:
+| candidate | streaming? | Pi 4 CPU? | result |
+|---|---|---|---|
+| Sherpa-ONNX (VITS, Kokoro, Matcha) | post-hoc only — model runs to completion before callback (`offline-tts-vits-impl.h`) | n/a | ruled out without measurement |
+| Aqueduct hosted Kokoro | server returns full body at end (TTFB ≈ total, wav + pcm) | n/a | ruled out — non-streaming server-side |
+| NeuTTS Air Q4 GGUF (EN) | yes, native via `tts.infer_stream()` | **no** — measured | TTFA **82.8 s**, ~11× real-time, `Illegal instruction` crash mid-stream. "Pi support" claim is almost certainly Pi 5 |
+| XTTS-v2, CosyVoice2, Voxtral, Qwen3-TTS | yes | no | need GPU or strong x86; not probed locally |
+| OpenAI Realtime / Gemini Live | yes | n/a | privacy-blocked per v1/v2 scope |
 
-- **XTTS-v2 (Coqui).** Exposes a documented streaming inference API (`tts.tts_stream(...)`) yielding audio chunks during decoding. Larger model — needs verification whether it runs usefully on Pi 4 CPU or whether self-hosting on a faster machine is required.
-- **Streaming-VITS forks.** Research forks (e.g., chunked-decoder VITS variants) that yield audio progressively. Untested on Pi, mainline status unclear.
-- **Self-hosted Kokoro with a streaming front-end.** Kokoro itself isn't streaming, but a thin server wrapper that decomposes input by sentence and writes the response with `Transfer-Encoding: chunked` would enable network-side streaming. Server complexity, but reuses a model whose fidelity we've already heard.
-- **OpenAI Realtime / gpt-realtime / Gemini Live.** End-to-end audio. Out of scope until TU Wien hosts an audio-capable LLM behind Aqueduct (privacy constraint).
+**Verdict:** no streaming TTS runs usefully on Pi 4 CPU today. Genuine streaming is dominated by LLM-backbone designs whose inference cost outpaces the Pi 4; VITS-family models that *do* run on Pi 4 are architecturally non-streaming.
 
-Pre-investigation step before any code: measurement, same approach as the Piper chunk and Aqueduct probes — survey what's available, time TTFA on the Pi or representative hardware, listen for fidelity. Decide architecture only after numbers.
+Future-work paths (out of v2 scope): self-host NeuTTS Air / XTTS-v2 on x86; re-probe if a sub-200 M-parameter streaming TTS lands (e.g. Kyutai Pocket TTS, released Jan 2026, not evaluated this round).
+
+## Reopened from extended Pi testing
+
+6. **Wake-word false positives on `computer`.** Long-session testing surfaced frequent false triggers. Anticipated by `Project_Overview.md:15` ("Porcupine remains a fallback if accuracy needs arise"). The combination is weak: `computer` is a single common English word, and our model is a community-trained `fwartner/home-assistant-wakewords-collection` build rather than a stock openWakeWord one. Switching to `hey_jarvis` (stock, multi-syllable) was confirmed to fix the issue, but the user prefers to keep `computer` as the wake word.
+   - **Leading candidate: expose `wake_word_threshold` in config.** Currently hardcoded at 0.5 in `wake_word.py:14`, never plumbed through `Config` or CLI. Bumping to 0.6–0.7 on the `computer` model should significantly cut false positives at some cost to true-positive responsiveness; user tunes per-deployment.
+   - Fallback: Porcupine adapter behind the existing `WakeWordEngine` Protocol. Bigger change — new optional dependency, license/key plumbing (Porcupine is free for personal use; commercial distribution needs a key). Pursue only if threshold tuning isn't enough.
 
 ## Out of scope for v2
 
