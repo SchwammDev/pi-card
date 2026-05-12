@@ -40,3 +40,7 @@ Production code depends on ABCs, never on concrete hardware. Each boundary has a
 **Audio format** (uniform across `AudioInput`/`AudioOutput` to avoid resampling): 16 kHz, mono, 16-bit signed PCM, little-endian. Input frame size: 1280 samples (80 ms) — openWakeWord's native chunk.
 
 **Injection:** constructor injection, no DI framework. Tests wire fakes through the same constructor — see `tests/conftest.py`.
+
+## Dependency notes
+
+- **`tflite-runtime` source pin in `pyproject.toml`.** `[tool.uv.sources]` redirects `tflite-runtime` to PyPI. `tflite-runtime` is a transitive dep of `openwakeword`, and `openwakeword` itself resolves from a private index (`git.eodc.eu`) that does not host `tflite-runtime`. Without the override, lock resolution fails. Looks dead because the package isn't in `dependencies`, but removing it breaks `uv lock` on a clean checkout. Leave it.
