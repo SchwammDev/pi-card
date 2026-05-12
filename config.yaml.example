@@ -16,6 +16,9 @@ agent:
 #                                # Increase if the device cuts you off during natural pauses.
 # max_stt_retries: 2         # low-confidence STT retries before giving up.
 # wake_word: computer        # one of: computer, alexa, hey_jarvis, hey_mycroft, hey_rhasspy.
+# wake_word_threshold: 0.5   # detection score required to trigger; range (0.0, 1.0].
+#                            # Raise (e.g. 0.6–0.7) to cut false positives on `computer`,
+#                            # at the cost of needing a clearer enunciation.
 
 # Speech-to-text. Defaults to local Faster-Whisper (offline). Switch to Aqueduct's
 # whisper-large-v3-turbo for ~19x faster transcription when an on-prem gateway is

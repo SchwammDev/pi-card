@@ -131,6 +131,26 @@ def test_config_rejects_unknown_wake_word(tmp_path):
     assert "hey_jarvis" in str(excinfo.value)
 
 
+def test_config_default_wake_word_threshold_matches_openwakeword_default(tmp_path):
+    config = _load_with_overrides(tmp_path)
+
+    assert config.wake_word_threshold == 0.5
+
+
+def test_config_overrides_wake_word_threshold(tmp_path):
+    config = _load_with_overrides(tmp_path, wake_word_threshold=0.7)
+
+    assert config.wake_word_threshold == 0.7
+
+
+@pytest.mark.parametrize("invalid", [0.0, -0.1, 1.1, 2.0])
+def test_config_rejects_wake_word_threshold_outside_valid_range(tmp_path, invalid):
+    with pytest.raises(ConfigError) as excinfo:
+        _load_with_overrides(tmp_path, wake_word_threshold=invalid)
+
+    assert "wake_word_threshold" in str(excinfo.value)
+
+
 def test_config_default_min_silence_duration_is_long_enough_for_natural_pauses(tmp_path):
     config = _load_with_overrides(tmp_path)
 

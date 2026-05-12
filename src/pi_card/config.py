@@ -3,7 +3,11 @@ from pathlib import Path
 
 import yaml
 
-from pi_card.pipeline.wake_word import DEFAULT_WAKE_WORD, SUPPORTED_WAKE_WORDS
+from pi_card.pipeline.wake_word import (
+    DEFAULT_THRESHOLD,
+    DEFAULT_WAKE_WORD,
+    SUPPORTED_WAKE_WORDS,
+)
 
 
 class ConfigError(ValueError):
@@ -26,6 +30,7 @@ class Config:
     silence_timeout: float = 5.0
     max_stt_retries: int = 2
     wake_word: str = DEFAULT_WAKE_WORD
+    wake_word_threshold: float = DEFAULT_THRESHOLD
     min_silence_duration_ms: int = 2500
     extra_body: dict | None = None
     stt_provider: str = LOCAL_STT_PROVIDER
@@ -62,6 +67,10 @@ class Config:
                 f"supported values: {supported}"
             )
 
+        wake_word_threshold = _parse_wake_word_threshold(
+            raw.get("wake_word_threshold", cls.wake_word_threshold), path
+        )
+
         extra_body = raw.get("extra_body")
         if extra_body is not None and not isinstance(extra_body, dict):
             raise ConfigError(
@@ -78,6 +87,7 @@ class Config:
             silence_timeout=float(raw.get("silence_timeout", cls.silence_timeout)),
             max_stt_retries=int(raw.get("max_stt_retries", cls.max_stt_retries)),
             wake_word=wake_word,
+            wake_word_threshold=wake_word_threshold,
             min_silence_duration_ms=int(
                 raw.get("min_silence_duration_ms", cls.min_silence_duration_ms)
             ),
@@ -85,6 +95,21 @@ class Config:
             stt_provider=stt_provider,
             stt_model=stt_model,
         )
+
+
+def _parse_wake_word_threshold(raw, path: Path) -> float:
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        raise ConfigError(
+            f"Config file {path} has 'wake_word_threshold' but it is not a number"
+        )
+    if not 0.0 < value <= 1.0:
+        raise ConfigError(
+            f"Config file {path} sets wake_word_threshold={value}; "
+            f"must be in the range (0.0, 1.0]"
+        )
+    return value
 
 
 def _parse_stt_section(raw_stt, path: Path) -> tuple[str, str | None]:

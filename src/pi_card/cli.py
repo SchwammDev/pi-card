@@ -171,6 +171,7 @@ def build_assistant(config: Config) -> VoiceAssistant:
         wake_word_detector=WakeWordDetector(
             engine=load_openwakeword_engine(model_name=config.wake_word),
             model_name=config.wake_word,
+            threshold=config.wake_word_threshold,
         ),
         stt=_build_stt(config, client),
         tts_by_language={
