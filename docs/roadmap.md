@@ -2,7 +2,7 @@
 
 | Version | Theme | Status |
 |---|---|---|
-| v1.1.1 | STT misfire gate (confidence + empty-transcript skip before LLM) | planned |
+| v1.1.1 | Hallucinated-transcript gate (low `avg_logprob` → silent skip) | shipped 2026-05-12 — local Faster-Whisper only; Aqueduct returns null confidence, gate dormant there |
 | v1.2 | Tool use | designing — see [`features/tool-use.md`](features/tool-use.md) |
 | v1.3 | Barge-in (VAD during playback + lane cancellation) | not started |
 | v1.4+ | Conversation memory across sessions | not started |
