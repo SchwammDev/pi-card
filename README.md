@@ -46,6 +46,7 @@ For a fresh Pi (Pi OS prereqs, ReSpeaker driver install, ALSA setup, headless se
 
 - [`docs/project-brief.md`](docs/project-brief.md) — design and architecture
 - [`docs/developers.md`](docs/developers.md) — workflow, test conventions, listening protocol, extension points
+- [`docs/roadmap.md`](docs/roadmap.md) — upcoming releases and feature plans
 
 ## Development
 
