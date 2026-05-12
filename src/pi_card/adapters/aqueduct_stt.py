@@ -2,7 +2,14 @@ import io
 import wave
 from typing import Protocol
 
-from pi_card.pipeline.stt import SAMPLE_RATE_HZ, SAMPLE_WIDTH_BYTES, Transcript
+from pi_card.pipeline.stt import (
+    SAMPLE_RATE_HZ,
+    SAMPLE_WIDTH_BYTES,
+    Transcript,
+    mean_avg_logprob,
+)
+
+VERBOSE_JSON_RESPONSE_FORMAT = "verbose_json"
 
 WAV_FILENAME = "speech.wav"
 WAV_CONTENT_TYPE = "audio/wav"
@@ -37,8 +44,10 @@ class AqueductWhisperSTT:
             model=self._model,
             file=(WAV_FILENAME, wav_bytes, WAV_CONTENT_TYPE),
             language=language,
+            response_format=VERBOSE_JSON_RESPONSE_FORMAT,
         )
-        return Transcript(text=result.text.strip(), avg_logprob=None)
+        segments = getattr(result, "segments", None) or []
+        return Transcript(text=result.text.strip(), avg_logprob=mean_avg_logprob(segments))
 
 
 def _pcm_to_wav(pcm: bytes) -> bytes:

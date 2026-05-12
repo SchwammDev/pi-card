@@ -56,11 +56,10 @@ class WhisperSTT:
         segments, _info = self._model.transcribe(samples, **kwargs)
         segments = list(segments)
         text = "".join(segment.text for segment in segments).strip()
-        avg_logprob = _mean_avg_logprob(segments)
-        return Transcript(text=text, avg_logprob=avg_logprob)
+        return Transcript(text=text, avg_logprob=mean_avg_logprob(segments))
 
 
-def _mean_avg_logprob(segments: list) -> float | None:
+def mean_avg_logprob(segments) -> float | None:
     values = [s.avg_logprob for s in segments if getattr(s, "avg_logprob", None) is not None]
     if not values:
         return None
