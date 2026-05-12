@@ -29,7 +29,7 @@ nano ~/.config/pi-card/config.yaml   # set base_url, api_key, model
 make run
 ```
 
-For a fresh Pi (Pi OS prereqs, ReSpeaker driver install, ALSA setup, headless service), follow [`INSTALL.md`](INSTALL.md).
+For a fresh Pi (Pi OS prereqs, ReSpeaker driver install, ALSA setup, headless service), follow [`docs/install.md`](docs/install.md).
 
 ## Configuration
 
@@ -44,11 +44,11 @@ For a fresh Pi (Pi OS prereqs, ReSpeaker driver install, ALSA setup, headless se
 
 ## Documentation
 
-- [`Project_Overview.md`](Project_Overview.md) — design and architecture
-- [`DEVELOPERS.md`](DEVELOPERS.md) — workflow, test conventions, listening protocol, extension points
+- [`docs/project-brief.md`](docs/project-brief.md) — design and architecture
+- [`docs/developers.md`](docs/developers.md) — workflow, test conventions, listening protocol, extension points
 
 ## Development
 
-Python 3.11+, uv. Run tests with `./run-tests.sh`. See [`DEVELOPERS.md`](DEVELOPERS.md).
+Python 3.11+, uv. Run tests with `./run-tests.sh`. See [`docs/developers.md`](docs/developers.md).
 
 License: see [`LICENSE`](LICENSE).

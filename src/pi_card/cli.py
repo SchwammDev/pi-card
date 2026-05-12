@@ -81,7 +81,7 @@ def configure_logging(
     level: str = "WARNING",
     debug_transcripts: bool = False,
 ) -> None:
-    """Configure rotating file logging per Project_Overview.
+    """Configure rotating file logging per project-brief.
 
     Idempotent: clears our own handlers before re-adding so the CLI can be
     invoked multiple times in one process (notably, in tests)."""
