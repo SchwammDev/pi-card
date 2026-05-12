@@ -108,8 +108,8 @@ Future-work paths (out of v2 scope): self-host NeuTTS Air / XTTS-v2 on x86; re-p
 ## Reopened from extended Pi testing
 
 6. **Wake-word false positives on `computer`.** Long-session testing surfaced frequent false triggers. Anticipated by `Project_Overview.md:15` ("Porcupine remains a fallback if accuracy needs arise"). The combination is weak: `computer` is a single common English word, and our model is a community-trained `fwartner/home-assistant-wakewords-collection` build rather than a stock openWakeWord one. Switching to `hey_jarvis` (stock, multi-syllable) was confirmed to fix the issue, but the user prefers to keep `computer` as the wake word.
-   - **Leading candidate: expose `wake_word_threshold` in config.** Currently hardcoded at 0.5 in `wake_word.py:14`, never plumbed through `Config` or CLI. Bumping to 0.6–0.7 on the `computer` model should significantly cut false positives at some cost to true-positive responsiveness; user tunes per-deployment.
-   - Fallback: Porcupine adapter behind the existing `WakeWordEngine` Protocol. Bigger change — new optional dependency, license/key plumbing (Porcupine is free for personal use; commercial distribution needs a key). Pursue only if threshold tuning isn't enough.
+   - ~~**Expose `wake_word_threshold` in config.**~~ Shipped. Validated to `(0.0, 1.0]`, plumbed from `Config` → `WakeWordDetector` in `cli.build_assistant`. Default stays at 0.5 to preserve current behavior; users bump to 0.6–0.7 per-deployment if they keep `computer`.
+   - Fallback (not pursued unless threshold tuning isn't enough): Porcupine adapter behind the existing `WakeWordEngine` Protocol. Bigger change — new optional dependency, license/key plumbing (Porcupine is free for personal use; commercial distribution needs a key).
 
 ## Out of scope for v2
 
