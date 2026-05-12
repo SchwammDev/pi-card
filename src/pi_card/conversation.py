@@ -147,10 +147,10 @@ class Conversation:
             assert isinstance(result, Utterance)
             self._leds.set_state(LEDState.THINKING)
             self._t_thinking_on = time.perf_counter()
-            text = self._stt.transcribe(result.pcm, language=self._language)
-            if text:
+            transcript = self._stt.transcribe(result.pcm, language=self._language)
+            if transcript.text:
                 _latency.info("stt_done +%.3fs", time.perf_counter() - self._t_thinking_on)
-                return text
+                return transcript.text
 
             if attempt < self._max_stt_retries:
                 if not self._speak(

@@ -12,9 +12,9 @@ def test_transcribes_audio_in_the_requested_language():
     model = FakeWhisperModel({"en": "hello world"})
     stt = WhisperSTT(model=model)
 
-    text = stt.transcribe(_silent_pcm(1.0), language="en")
+    transcript = stt.transcribe(_silent_pcm(1.0), language="en")
 
-    assert text == "hello world"
+    assert transcript.text == "hello world"
 
 
 def test_forwards_the_requested_language_to_the_model():
@@ -33,8 +33,8 @@ def test_supports_switching_language_between_calls():
     first = stt.transcribe(_silent_pcm(1.0), language="en")
     second = stt.transcribe(_silent_pcm(1.0), language="fr")
 
-    assert first == "good morning"
-    assert second == "bonjour"
+    assert first.text == "good morning"
+    assert second.text == "bonjour"
     assert [c["language"] for c in model.calls] == ["en", "fr"]
 
 
@@ -51,7 +51,7 @@ def test_returns_trimmed_text_when_model_pads_whitespace():
     model = FakeWhisperModel({"en": "   hello   "})
     stt = WhisperSTT(model=model)
 
-    assert stt.transcribe(_silent_pcm(0.2), language="en") == "hello"
+    assert stt.transcribe(_silent_pcm(0.2), language="en").text == "hello"
 
 
 def test_rejects_pcm_with_odd_byte_length():

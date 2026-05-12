@@ -2,7 +2,7 @@ import io
 import wave
 from typing import Protocol
 
-from pi_card.pipeline.stt import SAMPLE_RATE_HZ, SAMPLE_WIDTH_BYTES
+from pi_card.pipeline.stt import SAMPLE_RATE_HZ, SAMPLE_WIDTH_BYTES, Transcript
 
 WAV_FILENAME = "speech.wav"
 WAV_CONTENT_TYPE = "audio/wav"
@@ -26,7 +26,7 @@ class AqueductWhisperSTT:
         self._client = client
         self._model = model
 
-    def transcribe(self, pcm: bytes, language: str) -> str:
+    def transcribe(self, pcm: bytes, language: str) -> Transcript:
         if len(pcm) % SAMPLE_WIDTH_BYTES != 0:
             raise ValueError(
                 f"pcm length {len(pcm)} is not a multiple of {SAMPLE_WIDTH_BYTES} bytes"
@@ -38,7 +38,7 @@ class AqueductWhisperSTT:
             file=(WAV_FILENAME, wav_bytes, WAV_CONTENT_TYPE),
             language=language,
         )
-        return result.text.strip()
+        return Transcript(text=result.text.strip(), avg_logprob=None)
 
 
 def _pcm_to_wav(pcm: bytes) -> bytes:

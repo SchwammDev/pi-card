@@ -59,7 +59,7 @@ def assert_wav_carries_pcm_at_pipeline_format(wav_bytes: bytes, pcm: bytes) -> N
 def test_returns_the_trimmed_transcript_text_from_the_remote_response():
     stt, _ = _make_stt(text="   hello world   ")
 
-    assert stt.transcribe(_silent_pcm(0.5), language="en") == "hello world"
+    assert stt.transcribe(_silent_pcm(0.5), language="en").text == "hello world"
 
 
 def test_forwards_the_requested_language_to_the_remote_endpoint():

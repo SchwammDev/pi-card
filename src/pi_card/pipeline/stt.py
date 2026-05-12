@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Protocol
 
 SAMPLE_RATE_HZ = 16_000
@@ -5,8 +6,14 @@ SAMPLE_WIDTH_BYTES = 2
 _INT16_FULL_SCALE = 32_768.0
 
 
+@dataclass(frozen=True)
+class Transcript:
+    text: str
+    avg_logprob: float | None
+
+
 class SpeechToText(Protocol):
-    def transcribe(self, pcm: bytes, language: str) -> str: ...
+    def transcribe(self, pcm: bytes, language: str) -> Transcript: ...
 
 
 class WhisperModel(Protocol):
@@ -26,7 +33,7 @@ class WhisperSTT:
         self._model = model
         self._initial_prompts = dict(initial_prompts or {})
 
-    def transcribe(self, pcm: bytes, language: str) -> str:
+    def transcribe(self, pcm: bytes, language: str) -> Transcript:
         if len(pcm) % SAMPLE_WIDTH_BYTES != 0:
             raise ValueError(
                 f"pcm length {len(pcm)} is not a multiple of {SAMPLE_WIDTH_BYTES} bytes"
@@ -47,7 +54,17 @@ class WhisperSTT:
             kwargs["initial_prompt"] = prompt
 
         segments, _info = self._model.transcribe(samples, **kwargs)
-        return "".join(segment.text for segment in segments).strip()
+        segments = list(segments)
+        text = "".join(segment.text for segment in segments).strip()
+        avg_logprob = _mean_avg_logprob(segments)
+        return Transcript(text=text, avg_logprob=avg_logprob)
+
+
+def _mean_avg_logprob(segments: list) -> float | None:
+    values = [s.avg_logprob for s in segments if getattr(s, "avg_logprob", None) is not None]
+    if not values:
+        return None
+    return sum(values) / len(values)
 
 
 def load_faster_whisper_model(
