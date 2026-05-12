@@ -9,7 +9,6 @@ class USBSpeakerOutput(AudioOutput):
     via ALSA/portaudio. Blocks until the buffer has drained."""
 
     def __init__(self, *, device: str | int | None = None):
-        import numpy as np  # noqa: F401  (used in play)
         import sounddevice as sd  # type: ignore[import-not-found]
 
         self._sd = sd
