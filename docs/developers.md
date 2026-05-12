@@ -1,6 +1,6 @@
 # Developing pi-card
 
-Practical doc for working on the codebase. Product/design spec lives in [`Project_Overview.md`](Project_Overview.md).
+Practical doc for working on the codebase. Product/design spec lives in [`project-brief.md`](project-brief.md).
 
 ## Workflow
 

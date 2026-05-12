@@ -22,7 +22,7 @@ The active language can be switched mid-session via voice command (see `README.m
 
 - **Audio input** — ReSpeaker 4-Mic HAT (I2S)
 - **Audio output** — USB speakers
-- **Abstraction** — Production code depends on abstract interfaces (Python ABCs), never on concrete hardware directly. Dependencies are injected via constructors. See `DEVELOPERS.md` for the ABC table and audio format.
+- **Abstraction** — Production code depends on abstract interfaces (Python ABCs), never on concrete hardware directly. Dependencies are injected via constructors. See `developers.md` for the ABC table and audio format.
 
 ## AI Agent
 
@@ -77,12 +77,12 @@ pi-card/
 │   ├── __main__.py, cli.py, config.py
 │   ├── assistant.py         # top-level orchestrator
 │   ├── conversation.py      # turn state, language switching
-│   ├── hardware/            # the four ABCs (see DEVELOPERS.md)
+│   ├── hardware/            # the four ABCs (see developers.md)
 │   ├── adapters/            # production implementations
 │   └── pipeline/            # wake-word, STT, TTS wrappers
 └── tests/
     ├── conftest.py
-    ├── dsl/                 # actions and assertions (see DEVELOPERS.md)
+    ├── dsl/                 # actions and assertions (see developers.md)
     ├── fakes/               # one fake per ABC
     └── features/            # acceptance tests, one file per feature area
 ```
