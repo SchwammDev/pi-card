@@ -25,6 +25,8 @@ SYSTEM_PROMPT = (
     "Avoid markdown, lists, or code \u2014 your output is spoken aloud."
 )
 
+MIN_AVG_LOGPROB = -1.0
+
 _logger = logging.getLogger(__name__)
 _transcripts = logging.getLogger("pi_card.transcripts")
 _latency = logging.getLogger("pi_card.latency")
@@ -148,6 +150,13 @@ class Conversation:
             self._leds.set_state(LEDState.THINKING)
             self._t_thinking_on = time.perf_counter()
             transcript = self._stt.transcribe(result.pcm, language=self._language)
+            if _is_hallucination(transcript):
+                _logger.debug(
+                    "stt_misfire_gated avg_logprob=%.3f text=%r",
+                    transcript.avg_logprob,
+                    transcript.text,
+                )
+                return None
             if transcript.text:
                 _latency.info("stt_done +%.3fs", time.perf_counter() - self._t_thinking_on)
                 return transcript.text
@@ -185,6 +194,14 @@ class Conversation:
     def _play_error_tone(self) -> None:
         self._leds.set_state(LEDState.ERROR)
         self._audio_out.play(error_tone())
+
+
+def _is_hallucination(transcript) -> bool:
+    return (
+        bool(transcript.text)
+        and transcript.avg_logprob is not None
+        and transcript.avg_logprob < MIN_AVG_LOGPROB
+    )
 
 
 def _log_first(items: Iterable[str], label: str, t0: float) -> Iterator[str]:

@@ -1,6 +1,6 @@
 [project]
 name = "pi-card"
-version = "1.1.0"
+version = "1.1.1"
 description = "Raspberry Pi AI voice assistant"
 requires-python = ">=3.11,<3.12"
 dependencies = [

@@ -8,9 +8,12 @@ from tests.dsl.actions import (
     trigger_wake_word,
     tts_will_fail,
     user_says,
+    whisper_hallucinates,
 )
 from tests.dsl.assertions import (
     assert_agent_was_called,
+    assert_agent_was_not_called,
+    assert_assistant_did_not_speak_in,
     assert_assistant_spoke,
     assert_led_went_through,
     assert_returned_to_wake_word_mode,
@@ -66,6 +69,17 @@ def test_low_confidence_stt_gives_up_after_max_retries_and_flashes_red(world):
     assert_led_went_through(world, LEDState.ERROR)
     assert_returned_to_wake_word_mode(world)
     assert_agent_was_called(world, times=0)
+
+
+def test_low_confidence_transcript_is_dropped_silently_without_reaching_the_agent(world):
+    trigger_wake_word(world)
+    whisper_hallucinates(world, text="Thanks for watching!", language="en")
+
+    run_until_exhausted(world)
+
+    assert_agent_was_not_called(world)
+    assert_assistant_did_not_speak_in(world, "en")
+    assert_returned_to_wake_word_mode(world)
 
 
 def test_tts_failure_plays_error_tone_and_returns_to_wake_word_mode(world):

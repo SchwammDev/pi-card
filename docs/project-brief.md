@@ -39,6 +39,7 @@ The active language can be switched mid-session via voice command (see `README.m
 - **Error handling & feedback:**
   - **Network / API failure** — Play spoken error cue ("I can't reach my brain right now"), flash LED red, return to wake-word mode. No silent retries.
   - **Low-confidence STT** — Ask "Sorry, could you repeat that?" and re-listen. Max retries configurable (default: 2), then audio error cue + red LED, return to wake-word mode.
+  - **Whisper hallucination on silence** — When Whisper produces text but its mean `avg_logprob` falls below the gate, return silently to wake-word mode (no retry prompt, no LLM call). Targets the false-wake → invented-transcript pattern ("Thanks for watching!").
   - **TTS failure** — Play generic error tone, log error, return to wake-word mode.
   - **Audio hardware issues** — Detect on startup, fail fast with clear log message. LED solid red if available.
   - **LED feedback** — ReSpeaker HAT LEDs: pulsing blue = listening, pulsing green = thinking/processing, red flash = error.

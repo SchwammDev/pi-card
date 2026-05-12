@@ -30,6 +30,19 @@ def user_says(world: World, text: str, *, language: str) -> None:
     world.whisper.queue_transcript(language, text)
 
 
+HALLUCINATED_AVG_LOGPROB = -2.0
+
+
+def whisper_hallucinates(world: World, *, text: str, language: str) -> None:
+    world.audio_in.queue(_SPEECH_FRAME * _USER_SAYS_SPEECH_FRAMES)
+    world.audio_in.queue(_SILENCE_FRAME * _USER_SAYS_TRAILING_SILENCE_FRAMES)
+    world.speech_detector.queue(
+        *([True] * _USER_SAYS_SPEECH_FRAMES),
+        *([False] * _USER_SAYS_TRAILING_SILENCE_FRAMES),
+    )
+    world.whisper.queue_transcript(language, text, avg_logprob=HALLUCINATED_AVG_LOGPROB)
+
+
 def user_stays_silent(world: World, *, ms: int = 800) -> None:
     """Queue silence long enough for the conversation's silence timeout to fire."""
     frames = max(1, ms // FRAME_DURATION_MS)
