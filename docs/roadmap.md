@@ -6,8 +6,8 @@ The vision is a growing personal-agent platform: an always-on **agent core** (He
 
 Delivery sequence:
 
-1. **Tool Use Foundation** — voice-local dispatch loop, time/date, timers, Notifier
-2. **Core Split** — substrate spike (pi-agent-core), core daemon on Hetzner, voice becomes thin client
+1. **Core Split** — substrate spike (pi-agent-core), core daemon on Hetzner, voice becomes thin client
+2. **Tool Use Foundation** — first core-side tools (time/date, timers) and the announcement push path
 3. **Nextcloud: Read Access** — "what do I have to do today"; tools live in the core
 4. **Reminders** — persistent, survive restart
 5. **Nextcloud: Write & Planning** — dictate notes, calendar writes, plan my day/week
@@ -16,7 +16,7 @@ Delivery sequence:
 8. **Barge-in** — interrupt mid-reply; announcements cut in
 9. **Conversation Memory** — cross-session, opt-in, shared across channels
 
-Sequencing rationale: the voice-local loop hardens the streaming path first; the Core Split lands before Nextcloud tools because tools live in the core; read and reminders deliver value before write/planning; Text Channel gives proactivity a way to reach the user on the road; barge-in is conversation polish, value comes first; memory pays off once tools generate state worth remembering — and multi-channel makes shared context load-bearing.
+Sequencing rationale: the Core Split lands first — building a voice-local loop only to replace it at the split would be throwaway work, and the split's spike de-risks the substrate before anything depends on it; Tool Use Foundation then exercises the wire path end to end with real value; Nextcloud tools follow because tools live in the core; read and reminders deliver value before write/planning; Text Channel gives proactivity a way to reach the user on the road; barge-in is conversation polish, value comes first; memory pays off once tools generate state worth remembering — and multi-channel makes shared context load-bearing.
 
 Substrate decision (recorded 2026-05): **pi-agent-core** (TypeScript) for the agent core, validated by a spike before the split. An earlier Python-native plan (pydantic-ai) was the right call for a standalone voice appliance; the platform vision made extensibility the deciding axis — pi's first-class extensions and agent self-extension, plus a trusted maintainer. pydantic-ai is the documented fallback if the spike fails. The voice frontend's audio pipeline stays Python regardless.
 
