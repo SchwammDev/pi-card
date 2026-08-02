@@ -6,11 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/no_added_comments.py"
-          },
-          {
-            "type": "command",
-            "command": "python3 .claude/hooks/long_test_nudge.py"
+            "command": "$HOME/.local/bin/liubai cc-hook"
           }
         ]
       }
